@@ -87,36 +87,28 @@ class Identifier:
         detections = []
         faces = self.extractor.extract_faces(img)
         for face, face_region, _ in faces:
-            match, dist = self.compare_face_to_known_faces(face)
-            if match is not None:
-                detection =  { "confidence": dist/self.identification_threshold,
-                                 "class_name": match,
-                                 "x_min": face_region["x"],
-                                 "y_min": face_region["y"], 
-                                 "x_max": face_region["x"] + face_region["w"],
-                                "y_max": face_region["y"] + face_region["h"]}
-            else:
-                detection =  { "confidence": 1-dist/self.identification_threshold,
-                                 "class_name": "unknown",
-                                 "x_min": face_region["x"],
-                                 "y_min": face_region["y"], 
-                                 "x_max": face_region["x"] + face_region["w"],
-                                "y_max": face_region["y"] + face_region["h"]}
+            match, conf = self.compare_face_to_known_faces(face)
+            detection =  { "confidence": conf,
+                                "class_name": match,
+                                "x_min": face_region["x"],
+                                "y_min": face_region["y"], 
+                                "x_max": face_region["x"] + face_region["w"],
+                            "y_max": face_region["y"] + face_region["h"]}
             
             detections.append(detection)    
         
         return detections
             
-    def compare_face_to_known_faces(self, face):
+    def compare_face_to_known_faces(self, face, unknown_label:str="unknown"):
         """
         Encodes the face, calculates its distances with known faces and
-        returns the best match. If no match is found, returns (None, math.inf).
+        returns the best match and the confidence.
 
         Args:
             face (np.array): extracted face of size self.target_size
 
         Returns:
-            (label, distance):
+            label, confidence (str, float):
         """
         source_embed = self.encoder.encode(face)
         match = None
@@ -124,6 +116,9 @@ class Identifier:
         for label in self.known_embeddings:
             for target_embed in self.known_embeddings[label]:
                 dist = self.distance(source_embed, target_embed)
-                if dist <=self.identification_threshold and dist<min_dist:
+                if dist<min_dist:
                     match, min_dist  = label, dist
-        return match, min_dist
+        
+        if min_dist < self.identification_threshold:
+            return match, 1-min_dist
+        return unknown_label, min_dist
