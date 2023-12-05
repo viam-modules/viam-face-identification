@@ -65,7 +65,7 @@ class Identifier:
                     or (".jpeg" in file.lower())
                     or (".png" in file.lower())
                 ):
-                    im = Image.open(label_path+"/"+file).convert('RGB') #convert in RGB because png openened in RGBA
+                    im = Image.open(label_path+"/"+file).convert('RGB') #convert in RGB because pnga are RGBA
                     img = np.array(im)[...,::-1]
                     faces = self.extractor.extract_faces(img)
                     for face, _, _ in faces: 
