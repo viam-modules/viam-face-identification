@@ -86,7 +86,6 @@ class Identifier:
         """        
         detections = []
         faces = self.extractor.extract_faces(img)
-        LOGGER.error(f"len(faces) is {len(faces)}")
         for face, face_region, _ in faces:
             match, dist = self.compare_face_to_known_faces(face)
             if match is not None:
