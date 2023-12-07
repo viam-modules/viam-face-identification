@@ -100,6 +100,7 @@ The following attributes are available to configure your deepface module:
 | `label_and_directories`    | dict   | Optional     |         | Dictionary mapping class labels to corresponding directories in the dataset. See [example](#example-of-tree-file).                |
 | `distance_metric`          | string | Optional     | `'cosine'`| Distance metric used for face recognition. This attribute can be set to `'cosine'`, `'euclidean'` and `'euclidean_l2'`.                                                  |
 | `identification_threshold` | float  | Optional     |    | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
+| `sigmoid_steepness`            | float | Optional     | `10`  | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.  |
 
 ## Deeper dive
 
@@ -136,3 +137,6 @@ Value assigned to `identification_threshold` if empty. For source, see [`Deepfac
 | `'DeepFace'`    | 0.23              | 64.0               | 0.64                  |
 | `'DeepID'`      | 0.015             | 45.0               | 0.17                  |
 
+#### Distance to confidence function 
+The function that maps confidence to distance is given by:
+$c = \frac{1}{1 + e^{s \cdot (d - 0.5)}}$, where $s$ is `sigmoid_steepness`, $c$ is the confidence and $d$ the distance.

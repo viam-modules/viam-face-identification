@@ -9,7 +9,7 @@ LOGGER = getLogger(__name__)
 SUPPORTED_IMAGE_TYPE = [CameraMimeType.JPEG,
                         CameraMimeType.PNG,
                         CameraMimeType.VIAM_RGBA]
-    
+
 def euclidian_l2(source_embed,target_embed ):
     return dst.findEuclideanDistance(
                         dst.l2_normalize(source_embed),
@@ -38,3 +38,6 @@ def decode_image(image: Union[Image.Image, RawImage])-> np.ndarray:
     bgr = rgb[...,::-1]
     return bgr
 
+def dist_to_conf_sigmoid(dist, steep=10):
+    return 1 / (1 + np.exp((steep*(dist-0.5))))
+    

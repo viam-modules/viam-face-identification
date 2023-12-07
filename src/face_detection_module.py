@@ -110,7 +110,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         labels_and_directories = dict(config.attributes.fields['label_and_directories'].struct_value)
         distance_metric_name = get_attribute_from_config('distance_metric', 'cosine')
         identification_threshold = get_attribute_from_config('identification_threshold', None, float)
-        
+        sigmoid_steepness = get_attribute_from_config('sigmoid_steepness',10.)
         self.identifier = Identifier(detector_backend=detector_backend, 
                         extraction_threshold=extraction_threshold, 
                         grayscale=grayscale, 
@@ -121,7 +121,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                         dataset_path =dataset_path, 
                         labels_directories = labels_and_directories,
                         distance_metric_name = distance_metric_name,
-                        identification_threshold=identification_threshold)
+                        identification_threshold=identification_threshold,
+                        sigmoid_steepness = sigmoid_steepness)
+
 
         self.identifier.compute_known_embeddings()
         LOGGER.info(f" Found {len(self.identifier.known_embeddings)} labelled groups.")
