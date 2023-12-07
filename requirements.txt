@@ -1,0 +1,4 @@
+numpy
+deepface
+viam-sdk
+pillow

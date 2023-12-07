@@ -1,0 +1,9 @@
+.DS_Store
+*.tar.gz
+.venv/
+src/__pycache__
+src/data
+.vscode
+venv
+benchmark/
+test_*
