@@ -14,7 +14,7 @@ if command -v apt-get; then
 		echo "python3-venv is installed, skipping setup"
 	else
 		if ! apt info python3-venv; then
-			echo package info not found, trying apt update
+			echo python3-venv package info not found, trying apt update
 			$SUDO apt-get -qq update
 		fi
 		$SUDO apt-get install -qqy python3-venv

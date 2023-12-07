@@ -1,4 +1,4 @@
-from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional, Union, cast
+from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional, Union
 from viam.media.video import CameraMimeType
 from typing_extensions import Self
 from viam.components.camera import Camera
@@ -76,8 +76,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             dependencies: Mapping[ResourceName, ResourceBase]):
         
         self.camera_name = config.attributes.fields["camera_name"].string_value
-        self.camera = cast(Camera, dependencies[Camera.get_resource_name(self.camera_name)])
-        
+        self.camera =  dependencies[Camera.get_resource_name(self.camera_name)]
         def get_attribute_from_config(attribute_name:str,  default, of_type=None):
             if attribute_name not in config.attributes.fields:
                 return default

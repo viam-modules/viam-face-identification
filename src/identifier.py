@@ -65,18 +65,20 @@ class Identifier:
                     or (".jpeg" in file.lower())
                     or (".png" in file.lower())
                 ):
-                    im = Image.open(label_path+"/"+file).convert('RGB') #convert in RGB because pnga are RGBA
+                    im = Image.open(label_path+"/"+file).convert('RGB') #convert in RGB because png are RGBA
                     img = np.array(im)[...,::-1]
                     faces = self.extractor.extract_faces(img)
                     for face, _, _ in faces: 
                         embed = self.encoder.encode(face)
                         embeddings.append(embed)
+                else:
+                    LOGGER.warn(f"Ignoring unsupported file type: {file}. Only .jpg, .jpeg, and .png files are supported.")
             self.known_embeddings[label] = embeddings
             
     def get_detections(self, img):
         """
-        compute face detections and identifcations in the input
-        image.  Faces whose minimum distance at best embedding are
+        compute face detections and identifications in the input
+        image. Faces whose minimum distance at best embedding are
         greater than the threshold are labelled as 'unknown'.
         Args:
             img (np.array): BGR format
