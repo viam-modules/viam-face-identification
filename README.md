@@ -140,3 +140,7 @@ Value assigned to `identification_threshold` if empty. For source, see [`Deepfac
 #### Distance to confidence function 
 The function that maps confidence to distance is given by:
 $c = \frac{1}{1 + e^{s \cdot (d - 0.5)}}$, where $s$ is `sigmoid_steepness`, $c$ is the confidence and $d$ the distance.
+
+<p align="center">
+ <img src="https://github.com/viam-labs/viam-face-identification/blob/main/img/sigmoid_plot.png" width=50%, height=50%>
+ </p>

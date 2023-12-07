@@ -24,7 +24,7 @@ class Identifier:
                  labels_directories:dict, 
                  distance_metric_name:str, 
                  identification_threshold:float,
-                 sigmoid_steepness:int):
+                 sigmoid_steepness:float):
         
         self.model_name = model_name
         target_size = functions.find_target_size(model_name=model_name)
