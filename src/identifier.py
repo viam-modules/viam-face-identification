@@ -2,7 +2,7 @@
 from .extractor import Extractor
 from .encoder import Encoder
 from deepface.commons import functions, distance as dst
-from .utils import euclidian_l2
+from .utils import euclidian_l2, dist_to_conf_sigmoid
 import os
 from PIL import Image
 import numpy as np
@@ -23,7 +23,8 @@ class Identifier:
                  dataset_path: str, 
                  labels_directories:dict, 
                  distance_metric_name:str, 
-                 identification_threshold:float):
+                 identification_threshold:float,
+                 sigmoid_steepness:int):
         
         self.model_name = model_name
         target_size = functions.find_target_size(model_name=model_name)
@@ -54,6 +55,8 @@ class Identifier:
             self.identification_threshold = dst.findThreshold(model_name, distance_metric_name)
         else:
             self.identification_threshold = identification_threshold
+        
+        self.sigmoid_steepness = sigmoid_steepness
         
     def compute_known_embeddings(self):
         for label in self.labels_directories:
@@ -122,5 +125,5 @@ class Identifier:
                     match, min_dist  = label, dist
         
         if min_dist < self.identification_threshold:
-            return match, 1-min_dist
-        return unknown_label, min_dist
+            return match, dist_to_conf_sigmoid(min_dist, self.sigmoid_steepness)
+        return unknown_label, 1 - dist_to_conf_sigmoid(min_dist, self.sigmoid_steepness)
