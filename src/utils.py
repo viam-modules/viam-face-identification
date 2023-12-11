@@ -1,6 +1,6 @@
 from deepface.commons import distance as dst
 from typing import Union
-from viam.media.video import RawImage
+from viam.media.video import ViamImage, RawImage
 from PIL import Image
 from viam.logging import getLogger
 from viam.media.video import CameraMimeType
@@ -17,7 +17,7 @@ def euclidian_l2(source_embed,target_embed ):
                     )
     
     
-def decode_image(image: Union[Image.Image, RawImage])-> np.ndarray:
+def decode_image(image: Union[Image.Image, RawImage, ViamImage])-> np.ndarray:
     """decode image to BGR numpy array
 
     Args:
@@ -26,13 +26,13 @@ def decode_image(image: Union[Image.Image, RawImage])-> np.ndarray:
     Returns:
         np.ndarray: BGR numpy array
     """
-    if type(image) == RawImage:
+    if isinstance(image, (RawImage, ViamImage)):
         if image.mime_type not in SUPPORTED_IMAGE_TYPE:
             LOGGER.error(f"Unsupported image type: {image.mime_type}. Supported types are {SUPPORTED_IMAGE_TYPE}.")
             raise ValueError(f"Unsupported image type: {image.mime_type}.")
         im = Image.open(image.data).convert('RGB') #convert in RGB png openened in RGBA
         return np.array(im)[...,::-1]
-
+    
     res = image.convert('RGB')
     rgb = np.array(res)
     bgr = rgb[...,::-1]
