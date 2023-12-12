@@ -25,7 +25,7 @@ pip install -r requirements.txt
 Navigate to the **Config** tab of your robot’s page in [the Viam app](https://app.viam.com/). Click on the **Services** subtab and click **Create service**. Select the `Vision` type, then select the `deepface_identification` model. Enter a name for your service and click **Create**.
 
 ### Example
-In the example bellow,  all faces in any pictures in the directory `French_Team`, will have an embedding associated to the label `Bleus`. The supported format for images of known face are PNG and JPEG.
+In the example below, all faces in any pictures within the directory `French_Team` will have an embedding associated with the label `Bleus`. The supported image formats for known faces are PNG and JPEG.
 #### Example of directory tree and config
 ```
 path
