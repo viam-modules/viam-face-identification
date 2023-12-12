@@ -23,11 +23,10 @@ pip install -r requirements.txt
 > Before configuring your vision service, you must [create a robot](https://docs.viam.com/manage/fleet/robots/#add-a-new-robot).
 
 Navigate to the **Config** tab of your robot’s page in [the Viam app](https://app.viam.com/). Click on the **Services** subtab and click **Create service**. Select the `Vision` type, then select the `deepface_identification` model. Enter a name for your service and click **Create**.
- 
 
- ***TODO:**: Say that it works with jpeg, png, with group pictures...
-
-### Example of directory tree and config
+### Example
+In the example bellow,  all faces in any pictures in the directory `French_Team`, will have an embedding associated to the label `Bleus`. The supported format for images of known face are PNG and JPEG.
+#### Example of directory tree and config
 ```
 path
 └── to
@@ -83,9 +82,8 @@ path
 ```
 
 
-**TODO:**: explain here that: For instance, any face in any pictures in the directory `Italian_Team`, will have an embedding associated to the label `Azzuri`.
 
-## Attributes description
+### Attributes description
 
 The following attributes are available to configure your deepface module:
 
@@ -105,8 +103,6 @@ The following attributes are available to configure your deepface module:
 | `distance_metric`          | string | Optional     | `'cosine'`| Distance metric used for face recognition. This attribute can be set to `'cosine'`, `'euclidean'` and `'euclidean_l2'`.                                                  |
 | `identification_threshold` | float  | Optional     |    | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
 | `sigmoid_steepness`            | float | Optional     | `10`  | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.  |
-
-## Deeper dive
 
 ## Supplementaries
 #### Extractors and encoders available
