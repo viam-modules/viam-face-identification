@@ -2,6 +2,10 @@
 
 This is a [Viam module](https://docs.viam.com/extend/modular-resources/) providing a model of vision service for face identification relying on [deepface](https://github.com/serengil/deepface)
 
+<p align="center">
+ <img src="https://github.com/viam-labs/viam-face-identification/blob/main/img/results.png" width=100%, height=100%>
+ </p>
+
 ## Getting started
 
 To use this module, follow these instructions to [add a module from the Viam Registry](https://docs.viam.com/modular-resources/configure/#add-a-module-from-the-viam-registry) and select the `viam:vision:deepface-identification` model from the [`deepface-identification` module](https://app.viam.com/module/viam/deepface_identification).
