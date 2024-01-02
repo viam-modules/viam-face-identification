@@ -82,7 +82,6 @@ path
 ```
 
 
-
 ### Attributes description
 
 The following attributes are available to configure your deepface module:
@@ -121,9 +120,8 @@ The following attributes are available to configure your deepface module:
 
 
 
-
-#### Thresholds for face Recoignition Models and similarity distances
-Value assigned to `identification_threshold` if empty. For source, see [`Deepface.commons.distance.findThreshold()`](https://github.com/serengil/deepface/blob/master/deepface/commons/distance.py#L28).
+#### Thresholds for face recognition models and similarity distances
+The value assigned to `identification_threshold` if empty. For the source, see [`Deepface.commons.distance.findThreshold()`](https://github.com/serengil/deepface/blob/master/deepface/commons/distance.py#L28).
 
 | Model       | `cosine` threshold | `euclidean` threshold | `euclidean_l2` threshold |
 |-------------|-------------------|--------------------|-----------------------|
