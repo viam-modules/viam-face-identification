@@ -1,4 +1,5 @@
 numpy
 deepface
+tensorflow
 viam-sdk
 pillow
