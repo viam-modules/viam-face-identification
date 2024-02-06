@@ -8,6 +8,7 @@ from PIL import Image
 import numpy as np
 import math
 from viam.logging import getLogger
+from .ir import utils
 
 LOGGER = getLogger(__name__)
 
@@ -20,28 +21,30 @@ class Identifier:
                  align:bool,
                  model_name:str,
                  normalization:str,
-                 dataset_path: str, 
-                 labels_directories:dict, 
+                 picture_directory:str ,
                  distance_metric_name:str, 
                  identification_threshold:float,
                  sigmoid_steepness:float):
         
         self.model_name = model_name
-        target_size = functions.find_target_size(model_name=model_name)
         
+        if model_name == 'ir':
+            target_size = (112, 112)
+        else:
+            target_size = functions.find_target_size(model_name=model_name)
+            
         self.extractor = Extractor(target_size=target_size, 
                                    detector_backend=detector_backend,
                                    extraction_threshold = extraction_threshold, 
                                    grayscale=grayscale,
-                                   enforce_detection=enforce_detection, 
+                                   enforce_detection=enforce_detection,
                                    align=align)
         
         self.encoder = Encoder(model_name = model_name,
                                align=align,
                                normalization=normalization)
         
-        self.dataset_path = dataset_path
-        self.labels_directories = labels_directories
+        self.picture_directory = picture_directory
         self.model_name = model_name
         self.known_embeddings = dict()
         if distance_metric_name == "cosine":
@@ -52,15 +55,20 @@ class Identifier:
             self.distance = euclidian_l2
         
         if identification_threshold is None:
-            self.identification_threshold = dst.findThreshold(model_name, distance_metric_name)
+            if self.model_name =='ir':
+                self.identification_threshold = utils.find_threshold(distance_metric=distance_metric_name)
+            else:
+                self.identification_threshold = dst.findThreshold(model_name, distance_metric_name)
         else:
             self.identification_threshold = identification_threshold
         
         self.sigmoid_steepness = sigmoid_steepness
-        
+            
     def compute_known_embeddings(self):
-        for label in self.labels_directories:
-            label_path = self.dataset_path+"/"+self.labels_directories[label]
+        all_entries = os.listdir(self.picture_directory)
+        directories = [entry for entry in all_entries if os.path.isdir(os.path.join(self.picture_directory, entry))]
+        for dir in directories:
+            label_path = os.path.join(self.picture_directory, dir)
             embeddings = []
             for file in os.listdir(label_path):
                 if (
@@ -76,9 +84,10 @@ class Identifier:
                         embeddings.append(embed)
                 else:
                     LOGGER.warn(f"Ignoring unsupported file type: {file}. Only .jpg, .jpeg, and .png files are supported.")
-            self.known_embeddings[label] = embeddings
+            self.known_embeddings[dir] = embeddings
             
-    def get_detections(self, img):
+            
+    def  get_detections(self, img):
         """
         compute face detections and identifications in the input
         image. Faces whose minimum distance at best embedding are
@@ -123,7 +132,7 @@ class Identifier:
                 dist = self.distance(source_embed, target_embed)
                 if dist<min_dist:
                     match, min_dist  = label, dist
-        
+
         if min_dist < self.identification_threshold:
             return match, dist_to_conf_sigmoid(min_dist, self.sigmoid_steepness)
         return unknown_label, 1 - dist_to_conf_sigmoid(min_dist, self.sigmoid_steepness)

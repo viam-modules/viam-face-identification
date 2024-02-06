@@ -38,6 +38,7 @@ ENCODERS = [
   "ArcFace", 
   "Dlib", 
   "SFace",
+  "ir"
 ]
 
 LOGGER = getLogger(__name__)
@@ -100,14 +101,13 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 return dict(config.attributes.fields[attribute_name].struct_value)
         
         detector_backend = get_attribute_from_config('extractor_model', 'opencv')
-        extraction_threshold = get_attribute_from_config('extractor_confidence_threshold', 3)
+        extraction_threshold = get_attribute_from_config('extractor_confidence_threshold', 6)
         grayscale = get_attribute_from_config('grayscale', False)    
-        enforce_detection = get_attribute_from_config('enforce_detection', False)
+        enforce_detection = get_attribute_from_config('always_run_face_recognition', False)
         align = get_attribute_from_config('align', True)
-        model_name = get_attribute_from_config('face_embedding_model', 'ArcFace')
+        model_name = get_attribute_from_config('face_embedding_model', 'ir')
         normalization = get_attribute_from_config('normalization', 'base')
-        dataset_path = config.attributes.fields['dataset_path'].string_value 
-        labels_and_directories = dict(config.attributes.fields['label_and_directories'].struct_value)
+        picture_directory = config.attributes.fields['picture_directory'].string_value 
         distance_metric_name = get_attribute_from_config('distance_metric', 'cosine')
         identification_threshold = get_attribute_from_config('identification_threshold', None, float)
         sigmoid_steepness = get_attribute_from_config('sigmoid_steepness',10.)
@@ -118,8 +118,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                         align = align,
                         model_name = model_name,
                         normalization= normalization,
-                        dataset_path =dataset_path, 
-                        labels_directories = labels_and_directories,
+                        picture_directory=picture_directory,
                         distance_metric_name = distance_metric_name,
                         identification_threshold=identification_threshold,
                         sigmoid_steepness = sigmoid_steepness)

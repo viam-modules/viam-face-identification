@@ -25,7 +25,7 @@ pip install -r requirements.txt
 Navigate to the **Config** tab of your robot’s page in [the Viam app](https://app.viam.com/). Click on the **Services** subtab and click **Create service**. Select the `Vision` type, then select the `deepface_identification` model. Enter a name for your service and click **Create**.
 
 ### Example
-In the example below, all faces in any pictures within the directory `French_Team` will have an embedding associated with the label `Bleus`. The supported image formats for known faces are PNG and JPEG.
+In the example below, all faces detected in any pictures within the directory `French_Team` will have an embedding associated with the label `French_Team`. The supported image formats for known faces are PNG and JPEG.
 #### Example of directory tree and config
 ```
 path
@@ -64,13 +64,7 @@ path
     {
       "attributes": {
         "camera_name": "cam",
-        "dataset_path": "/path/to/known_faces",
-        "label_and_directories": {
-          "jacques": "Jacques_Chirac",
-          "zizou": "Zinedine_Zidane",
-          "Bleus": "French_Team",
-          "Azzurri": "Italian_Team"
-        }
+        "picture_directory": "/path/to/known_faces",
       },
       "name": "detector-module",
       "type": "vision",
@@ -91,14 +85,13 @@ The following attributes are available to configure your deepface module:
 | -------------------------- | ------ | ------------ | ------- | -------------------------------------------------------------------------------------------- |
 | `camera_name`              | string | **Required** |         | Camera name to be used as input for identifying faces.                                        |
 | `extractor_model`          | string | Optional     | `'opencv'`| Model to be used to extract faces before computing embedding. See [available extractors](#extractors-and-encoders-available).                                 |
-| `extraction_threshold`     | int    | Optional     | `3`     | Confidence threshold for face extraction.                                                    |
+| `extraction_threshold`     | int    | Optional     | `6`     | Confidence threshold for face extraction.                                                    |
 | `grayscale`                | bool   | Optional     | `False` | Convert input images to grayscale before processing if set to `True`.                         |
-| `enforce_detection`        | bool   | Optional     | `False` | Set this value to true to raise an error if no faces are detected in the input image. This is a risky parameter; it is safer to check the number of detections and confidences associated (output of `get_detections()`). |
+| `always_run_face_recognition`        | bool   | Optional     | `False` | Set this value to true to raise an error if no faces are detected in the input image. This is a risky parameter; it is safer to check the number of detections and confidences associated (output of `get_detections()`). |
 | `align`                    | bool   | Optional     | `True`  | Perform facial alignment during the face embedding process if set to `True`.                   |
-| `face_embedding_model`     | string | Optional     | `'ArcFace'`| Model used for generating face embeddings. See [available encoding models](#extractors-and-encoders-available).                                                   |
+| `face_embedding_model`     | string | Optional     | `'ir'`| Model used for generating face embeddings. See [available encoding models](#extractors-and-encoders-available).                                                   |
 | `normalization`            | string | Optional     | `'base'`  | Normalization method applied to face embeddings. |
-| `dataset_path`             | string | Optional     |        | Path to the dataset used for face recognition.                                               |
-| `label_and_directories`    | dict   | Optional     |         | Dictionary mapping class labels to corresponding directories in the dataset. See [example](#example-of-tree-file).                |
+| `picture_directory`             | string | Optional     |        | Path to the dataset used for face recognition.                                               |
 | `distance_metric`          | string | Optional     | `'cosine'`| Distance metric used for face recognition. This attribute can be set to `'cosine'`, `'euclidean'` and `'euclidean_l2'`.                                                  |
 | `identification_threshold` | float  | Optional     |    | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
 | `sigmoid_steepness`            | float | Optional     | `10`  | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.  |

@@ -1,5 +1,8 @@
 numpy
-deepface
+deepface==0.0.83
 tensorflow
+torch
+torchvision
+facenet-pytorch
 viam-sdk
 pillow
