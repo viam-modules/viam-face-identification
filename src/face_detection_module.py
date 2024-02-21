@@ -17,28 +17,14 @@ from .utils import decode_image
 from PIL import Image
 
 EXTRACTORS = [
-  'opencv', 
-  'ssd', 
-  'dlib', 
-  'mtcnn', 
-  'retinaface', 
-  'mediapipe',
-  'yolov8',
-  'yunet',
-  'fastmtcnn',
+  'mediapipe:0',
+  'mediapipe:1', 
+  'yunet'
 ]
 
 ENCODERS = [
-  "VGG-Face", 
-  "Facenet", 
-  "Facenet512", 
-  "OpenFace", 
-  "DeepFace", 
-  "DeepID", 
-  "ArcFace", 
-  "Dlib", 
-  "SFace",
-  "ir"
+  "sface", 
+  "facenet"
 ]
 
 LOGGER = getLogger(__name__)
@@ -60,7 +46,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
      # Validates JSON Configuration
     @classmethod
     def validate_config(cls, config: ServiceConfig) -> Sequence[str]:
-        detection_framework = config.attributes.fields["face_extractor_model"].string_value or 'ssd'
+        detection_framework = config.attributes.fields["extractor_model"].string_value or 'yunet'
         if detection_framework not in EXTRACTORS:
             raise Exception("face_extractor_model must be one of: '" + "', '".join(EXTRACTORS) + "'.")
         model_name = config.attributes.fields["face_embedding_model"].string_value or 'ArcFace'
@@ -100,12 +86,12 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             elif type_default == dict:
                 return dict(config.attributes.fields[attribute_name].struct_value)
         
-        detector_backend = get_attribute_from_config('extractor_model', 'opencv')
-        extraction_threshold = get_attribute_from_config('extractor_confidence_threshold', 6)
+        detector_backend = get_attribute_from_config('extractor_model', 'yunet')
+        extraction_threshold = get_attribute_from_config('extractor_confidence_threshold', .6)
         grayscale = get_attribute_from_config('grayscale', False)    
         enforce_detection = get_attribute_from_config('always_run_face_recognition', False)
         align = get_attribute_from_config('align', True)
-        model_name = get_attribute_from_config('face_embedding_model', 'ir')
+        model_name = get_attribute_from_config('face_embedding_model', 'facenet')
         normalization = get_attribute_from_config('normalization', 'base')
         picture_directory = config.attributes.fields['picture_directory'].string_value 
         distance_metric_name = get_attribute_from_config('distance_metric', 'cosine')
@@ -121,7 +107,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                         picture_directory=picture_directory,
                         distance_metric_name = distance_metric_name,
                         identification_threshold=identification_threshold,
-                        sigmoid_steepness = sigmoid_steepness)
+                        sigmoid_steepness = sigmoid_steepness,
+                        debug = False)
 
 
         self.identifier.compute_known_embeddings()
