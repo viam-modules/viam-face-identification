@@ -63,7 +63,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         detection_framework = config.attributes.fields["face_extractor_model"].string_value or 'ssd'
         if detection_framework not in EXTRACTORS:
             raise Exception("face_extractor_model must be one of: '" + "', '".join(EXTRACTORS) + "'.")
-        model_name = config.attributes.fields["face_embedding_model"].string_value or 'ArcFace'
+        model_name = config.attributes.fields["face_embedding_model"].string_value or 'facenet'
         if model_name not in ENCODERS:
             raise Exception("face embedding model (encoder) must be one of: '" + "', '".join(ENCODERS) + "'.")
         camera_name = config.attributes.fields["camera_name"].string_value
