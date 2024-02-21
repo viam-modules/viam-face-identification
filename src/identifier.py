@@ -1,14 +1,14 @@
 
 from .extractor import Extractor
 from .encoder import Encoder
-from deepface.commons import functions, distance as dst
-from .utils import euclidian_l2, dist_to_conf_sigmoid
+from .utils import dist_to_conf_sigmoid, check_ir
 import os
 from PIL import Image
 import numpy as np
 import math
 from viam.logging import getLogger
-from .ir import utils
+from .models import utils
+from .distance import euclidean_distance, cosine_distance, euclidean_l2_distance
 
 LOGGER = getLogger(__name__)
 
@@ -24,45 +24,44 @@ class Identifier:
                  picture_directory:str ,
                  distance_metric_name:str, 
                  identification_threshold:float,
-                 sigmoid_steepness:float):
+                 sigmoid_steepness:float,
+                 debug:bool = False):
         
         self.model_name = model_name
+
+        target_size = (112, 112) #same for 'sface' and 'facenet'
         
-        if model_name == 'ir':
-            target_size = (112, 112)
-        else:
-            target_size = functions.find_target_size(model_name=model_name)
-            
         self.extractor = Extractor(target_size=target_size, 
-                                   detector_backend=detector_backend,
+                                   extracting_model=detector_backend,
                                    extraction_threshold = extraction_threshold, 
                                    grayscale=grayscale,
                                    enforce_detection=enforce_detection,
-                                   align=align)
+                                   align=align, 
+                                   debug = debug)
         
         self.encoder = Encoder(model_name = model_name,
                                align=align,
-                               normalization=normalization)
+                               normalization=normalization,
+                               debug = debug)
         
         self.picture_directory = picture_directory
         self.model_name = model_name
         self.known_embeddings = dict()
+        
         if distance_metric_name == "cosine":
-            self.distance = dst.findCosineDistance
+            self.distance = cosine_distance
         if distance_metric_name == "euclidean":
-            self.distance = dst.findEuclideanDistance
+            self.distance = euclidean_distance
         elif distance_metric_name == "euclidean_l2":
-            self.distance = euclidian_l2
+            self.distance = euclidean_l2_distance
         
         if identification_threshold is None:
-            if self.model_name =='ir':
-                self.identification_threshold = utils.find_threshold(distance_metric=distance_metric_name)
-            else:
-                self.identification_threshold = dst.findThreshold(model_name, distance_metric_name)
+            self.identification_threshold = utils.find_threshold(distance_metric=distance_metric_name) #ideally, this would also depend on the FR model
         else:
             self.identification_threshold = identification_threshold
         
         self.sigmoid_steepness = sigmoid_steepness
+        self.debug = True
             
     def compute_known_embeddings(self):
         all_entries = os.listdir(self.picture_directory)
@@ -77,10 +76,13 @@ class Identifier:
                     or (".png" in file.lower())
                 ):
                     im = Image.open(label_path+"/"+file).convert('RGB') #convert in RGB because png are RGBA
-                    img = np.array(im)[...,::-1]
-                    faces = self.extractor.extract_faces(img)
+                    img = np.array(im)
+                    r = img[:,:,0] 
+                    g = img[:,:,1]
+                    is_ir = (r==g).all()
+                    faces = self.extractor.extract_faces(img, is_ir)
                     for face, _, _ in faces: 
-                        embed = self.encoder.encode(face)
+                        embed = self.encoder.encode(face, is_ir)
                         embeddings.append(embed)
                 else:
                     LOGGER.warn(f"Ignoring unsupported file type: {file}. Only .jpg, .jpeg, and .png files are supported.")
@@ -93,15 +95,16 @@ class Identifier:
         image. Faces whose minimum distance at best embedding are
         greater than the threshold are labelled as 'unknown'.
         Args:
-            img (np.array): BGR format
+            img (np.array): RGB format
 
         Returns:
             [Detections]: _description_
         """        
         detections = []
-        faces = self.extractor.extract_faces(img)
+        is_ir = check_ir(img)
+        faces = self.extractor.extract_faces(img, is_ir)
         for face, face_region, _ in faces:
-            match, conf = self.compare_face_to_known_faces(face)
+            match, conf = self.compare_face_to_known_faces(face, is_ir)
             detection =  { "confidence": conf,
                                 "class_name": match,
                                 "x_min": face_region["x"],
@@ -113,7 +116,7 @@ class Identifier:
         
         return detections
             
-    def compare_face_to_known_faces(self, face, unknown_label:str="unknown"):
+    def compare_face_to_known_faces(self, face, is_ir, unknown_label:str="unknown"):
         """
         Encodes the face, calculates its distances with known faces and
         returns the best match and the confidence.
@@ -124,7 +127,7 @@ class Identifier:
         Returns:
             label, confidence (str, float):
         """
-        source_embed = self.encoder.encode(face)
+        source_embed = self.encoder.encode(face, is_ir)
         match = None
         min_dist = math.inf
         for label in self.known_embeddings:

@@ -1,8 +1,8 @@
+viam-sdk
+onnx2torch
 numpy
-deepface==0.0.83
-tensorflow
 torch
 torchvision
 facenet-pytorch
-viam-sdk
+opencv-python
 pillow
