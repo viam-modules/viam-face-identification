@@ -30,7 +30,7 @@ ENCODERS = [
 LOGGER = getLogger(__name__)
 
 class FaceIdentificationModule(Vision, Reconfigurable):
-    MODEL: ClassVar[Model] = Model(ModelFamily("viam", "vision"), "deepface-identification")
+    MODEL: ClassVar[Model] = Model(ModelFamily("viam", "vision"), "face-identification")
      
     def __init__(self, name: str):
         super().__init__(name=name)
@@ -55,7 +55,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         camera_name = config.attributes.fields["camera_name"].string_value
         if camera_name == "":
             raise Exception(
-                "A camera name is required for deepface_identification vision service module.")
+                "A camera name is required for face_identification vision service module.")
         return [camera_name]
 
     def reconfigure(self,
