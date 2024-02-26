@@ -1,12 +1,12 @@
 {
-  "module_id": "viam:deepface-identification",
+  "module_id": "viam:face-identification",
   "visibility": "public",
   "url": "https://github.com/viam-labs/viam-face-identification",
   "description": "This vision service provides face identification.",
   "models": [
     {
       "api": "rdk:service:vision",
-      "model": "viam:vision:deepface-identification"
+      "model": "viam:vision:face-identification"
     }
   ],
   "entrypoint": "run.sh"
