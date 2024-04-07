@@ -138,4 +138,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                         *,
                         timeout: Optional[float] = None,
                         **kwargs):
-        raise NotImplementedError
+        if command["command"] == "recompute_embeddings" :
+            self.identifier.known_embeddings = dict()
+            self.identifier.compute_known_embeddings()
+            LOGGER.error("Recompute Embeddings!")
+            return {"result": "Embeddings recomputed!"}
+        else: raise NotImplementedError
