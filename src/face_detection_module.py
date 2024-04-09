@@ -141,6 +141,6 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         if command["command"] == "recompute_embeddings" :
             self.identifier.known_embeddings = dict()
             self.identifier.compute_known_embeddings()
-            LOGGER.error("Recompute Embeddings!")
+            LOGGER.info("Embeddings recomputed!")
             return {"result": "Embeddings recomputed!"}
         else: raise NotImplementedError
