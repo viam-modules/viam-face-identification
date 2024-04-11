@@ -98,8 +98,11 @@ The following attributes are available to configure your deepface module:
 
 
 ## IR input support
-To support IR inputs and cross-domain face recognition, we reproduced [Prepended Domain Transformer: Heterogeneous Face Recognition without Bells and Whistle (*Marcel et al.*)](https://arxiv.org/abs/2210.06529)
-***in progress***
+To support IR inputs and cross-domain face recognition, we reproduced [Prepended Domain Transformer: Heterogeneous Face Recognition without Bells and Whistle (*Marcel et al.*)](https://arxiv.org/abs/2210.06529). 
+<p align="center">
+ <img src="https://github.com/viam-labs/viam-face-identification/blob/main/img/pdt.jpg" width=100%, height=100%>
+ <em>Image Source: [Marcel et al. 2022](#references)
+ </p>
 
 
 ## Supplementaries
@@ -117,7 +120,8 @@ To support IR inputs and cross-domain face recognition, we reproduced [Prepended
 
 
 #### Thresholds for face recognition models and similarity distances
-The value assigned to `identification_threshold` if empty. For the source, see [`Deepface.commons.distance.findThreshold()`](https://github.com/serengil/deepface/blob/master/deepface/commons/distance.py#L28).
+The value assigned to `identification_threshold` if empty.
+
 
 | Model       | `cosine` threshold | `euclidean` threshold | `euclidean_l2` threshold |
 | ----------- | ------------------ | --------------------- | ------------------------ |
