@@ -2,9 +2,9 @@ from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional, Union
 from viam.media.video import CameraMimeType
 from typing_extensions import Self
 from viam.components.camera import Camera
-from viam.media.video import RawImage
 from viam.proto.service.vision import Classification, Detection
 from viam.services.vision import Vision
+from viam.media.video import ViamImage
 from viam.module.types import Reconfigurable
 from viam.resource.types import Model, ModelFamily
 from viam.proto.app.robot import ServiceConfig
@@ -142,7 +142,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
     async def get_detections(
         self,
-        image: Union[Image.Image, RawImage],
+        image: ViamImage,
         *,
         extra: Mapping[str, Any],
         timeout: float,
@@ -152,7 +152,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
     async def get_classifications(
         self,
-        image: Union[Image.Image, RawImage],
+        image: ViamImage,
         count: int,
         *,
         extra: Mapping[str, Any],
