@@ -3,7 +3,9 @@ from viam.media.video import ViamImage
 from PIL import Image
 from viam.logging import getLogger
 from viam.media.video import CameraMimeType
+from io import BytesIO
 import numpy as np
+
 
 LOGGER = getLogger(__name__)
 SUPPORTED_IMAGE_TYPE = [
@@ -11,6 +13,7 @@ SUPPORTED_IMAGE_TYPE = [
     CameraMimeType.PNG,
     CameraMimeType.VIAM_RGBA,
 ]
+LIBRARY_SUPPORTED_FORMATS = ["JPEG", "PNG", "VIAM_RGBA"]
 
 
 def decode_image(image: Union[Image.Image, ViamImage]) -> np.ndarray:
@@ -28,7 +31,8 @@ def decode_image(image: Union[Image.Image, ViamImage]) -> np.ndarray:
                 f"Unsupported image type: {image.mime_type}. Supported types are {SUPPORTED_IMAGE_TYPE}."
             )
             raise ValueError(f"Unsupported image type: {image.mime_type}.")
-        im = Image.open(image.data).convert(
+
+        im = Image.open(BytesIO(image.data), formats=LIBRARY_SUPPORTED_FORMATS).convert(
             "RGB"
         )  # convert in RGB png openened in RGBA
         return np.array(im)

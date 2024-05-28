@@ -14,7 +14,6 @@ from viam.utils import ValueTypes
 from viam.logging import getLogger
 from .identifier import Identifier
 from .utils import decode_image
-from PIL import Image
 
 EXTRACTORS = ["mediapipe:0", "mediapipe:1", "yunet"]
 
