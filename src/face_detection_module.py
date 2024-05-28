@@ -1,4 +1,4 @@
-from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional, Union
+from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional
 from viam.media.video import CameraMimeType
 from typing_extensions import Self
 from viam.components.camera import Camera
@@ -129,6 +129,27 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
         self.identifier.compute_known_embeddings()
         LOGGER.info(f" Found {len(self.identifier.known_embeddings)} labelled groups.")
+
+    async def get_properties(
+        self,
+        *,
+        extra: Optional[Mapping[str, Any]] = None,
+        timeout: Optional[float] = None,
+    ):
+        raise NotImplementedError
+
+    async def capture_all_from_camera(
+        self,
+        camera_name: str,
+        return_image: bool = False,
+        return_classifications: bool = False,
+        return_detections: bool = False,
+        return_object_point_clouds: bool = False,
+        *,
+        extra: Optional[Mapping[str, Any]] = None,
+        timeout: Optional[float] = None,
+    ):
+        raise NotImplementedError
 
     async def get_object_point_clouds(
         self,
