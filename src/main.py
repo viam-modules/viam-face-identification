@@ -3,7 +3,7 @@ import asyncio
 from viam.services.vision import Vision
 from viam.module.module import Module
 from viam.resource.registry import Registry, ResourceCreatorRegistration
-from .face_detection_module import FaceIdentificationModule
+from src.face_detection_module import FaceIdentificationModule
 
 
 async def main():
@@ -15,7 +15,11 @@ async def main():
     Registry.register_resource_creator(
         Vision.SUBTYPE,
         FaceIdentificationModule.MODEL,
-        ResourceCreatorRegistration(FaceIdentificationModule.new_service, FaceIdentificationModule.validate_config))
+        ResourceCreatorRegistration(
+            FaceIdentificationModule.new_service,
+            FaceIdentificationModule.validate_config,
+        ),
+    )
     module = Module.from_args()
 
     module.add_model_from_registry(Vision.SUBTYPE, FaceIdentificationModule.MODEL)

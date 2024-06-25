@@ -12,8 +12,8 @@ from viam.proto.common import PointCloudObject, ResourceName
 from viam.resource.base import ResourceBase
 from viam.utils import ValueTypes
 from viam.logging import getLogger
-from .identifier import Identifier
-from .utils import decode_image
+from src.identifier import Identifier
+from src.utils import decode_image
 from viam.services.vision import CaptureAllResult
 
 EXTRACTORS = ["mediapipe:0", "mediapipe:1", "yunet"]
