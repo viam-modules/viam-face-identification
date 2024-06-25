@@ -142,3 +142,27 @@ $c = \frac{1}{1 + e^{s \cdot (d - 0.5)}}$, where $s$ is `sigmoid_steepness`, $c$
 1. Anjith George, Amir Mohammadi, and Sebastien Marcel. "Prepended Domain Transformer: Heterogeneous Face Recognition without Bells and Whistles." *IEEE Transactions on Information Forensics and Security*, 2022. [Link](
 https://doi.org/10.48550/arXiv.2210.06529)
 2. Balestriero, R., & LeCun, Y. (2022). Contrastive and Non-Contrastive Self-Supervised Learning Recover Global and Local Spectral Embedding Methods. In *Advances in Neural Information Processing Systems* (Vol. 35, pp. 26671–26685). Curran Associates, Inc. [Link](https://proceedings.neurips.cc/paper_files/paper/2022/file/aa56c74513a5e35768a11f4e82dd7ffb-Paper-Conference.pdf)
+
+
+## PyInstaller build instructions
+
+Run this to create your virtual environment:
+```
+./setup.sh
+```
+
+Run this to create your virtual environment:
+Activate it bby running:
+```
+source .venv/bin/activate
+```
+
+Make sure that the requirements are installed:
+```
+pip3 install -r requirements.txt
+```
+
+Build the executable `dist/main`
+```
+python -m PyInstaller --onefile --hidden-import="googleapiclient" --add-data "./src/models/checkpoints:checkpoints"  src/main.py
+```

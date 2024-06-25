@@ -12,8 +12,9 @@ from viam.proto.common import PointCloudObject, ResourceName
 from viam.resource.base import ResourceBase
 from viam.utils import ValueTypes
 from viam.logging import getLogger
-from .identifier import Identifier
-from .utils import decode_image
+from src.identifier import Identifier
+from src.utils import decode_image
+from viam.services.vision import CaptureAllResult
 
 EXTRACTORS = ["mediapipe:0", "mediapipe:1", "yunet"]
 
@@ -134,8 +135,12 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         *,
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
-    ):
-        raise NotImplementedError
+    ) -> Vision.Properties:
+        return Vision.Properties(
+            classifications_supported=False,
+            detections_supported=True,
+            object_point_clouds_supported=False,
+        )
 
     async def capture_all_from_camera(
         self,
@@ -148,7 +153,16 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
     ):
-        raise NotImplementedError
+        viam_im = await self.camera.get_image(mime_type=CameraMimeType.JPEG)
+        detections = None
+        if return_detections:
+            img = decode_image(viam_im)
+            detections = self.identifier.get_detections(img)
+
+        if not return_image:
+            viam_im = None
+
+        return CaptureAllResult(image=viam_im, detections=detections)
 
     async def get_object_point_clouds(
         self,

@@ -9,5 +9,5 @@
       "model": "viam:vision:face-identification"
     }
   ],
-  "entrypoint": "run.sh"
+  "entrypoint": "dist/main"
 }
