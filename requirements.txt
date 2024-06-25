@@ -4,6 +4,5 @@ numpy
 torch
 torchvision
 facenet-pytorch
-# setuptools
 opencv-python
 pillow
