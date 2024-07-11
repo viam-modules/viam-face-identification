@@ -10,7 +10,7 @@
     }
   ],
   "build": {
-    "build": "build.sh",
+    "build": "./build.sh",
     "path": "dist/main",
     "arch": [
       "linux/amd64",
