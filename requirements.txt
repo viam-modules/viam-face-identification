@@ -2,6 +2,7 @@ viam-sdk>=0.21
 onnx2torch
 numpy
 torch
+pyinstaller
 torchvision
 facenet-pytorch
 opencv-python
