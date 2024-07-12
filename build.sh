@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup.sh -- environment bootstrapper for python virtualenv
 
-set -euo pipefail
+set -e
 
 SUDO=sudo
 if ! command -v $SUDO; then
