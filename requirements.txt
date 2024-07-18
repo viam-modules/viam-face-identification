@@ -7,7 +7,7 @@ torch; sys_platform == 'darwin'
 torch==2.2.1+cpu; sys_platform  == 'linux'
 -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
-torchvision == 0.18
+torchvision == 0.18  == 'darwin'
 torchvision==0.17.2+cpu;sys_platform  == 'linux'
 -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
