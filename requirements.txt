@@ -13,7 +13,12 @@ torchvision==0.17.2+cpu;sys_platform  == 'linux'
 
 pyinstaller
 
-# torchvision==0.11.3
-# facenet-pytorch
+facenet-pytorch
 opencv-python
 pillow
+
+
+##for testing
+pytest
+pytest-asyncio
+pylint

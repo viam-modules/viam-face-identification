@@ -1,20 +1,24 @@
-from typing import ClassVar, List, Mapping, Sequence, Any, Dict, Optional
-from viam.media.video import CameraMimeType
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
 from typing_extensions import Self
+
 from viam.components.camera import Camera
-from viam.proto.service.vision import Classification, Detection
-from viam.services.vision import Vision
-from viam.media.video import ViamImage
+from viam.logging import getLogger
+from viam.media.video import CameraMimeType, ViamImage
 from viam.module.types import Reconfigurable
-from viam.resource.types import Model, ModelFamily
 from viam.proto.app.robot import ServiceConfig
 from viam.proto.common import PointCloudObject, ResourceName
+from viam.proto.service.vision import Classification, Detection
 from viam.resource.base import ResourceBase
+from viam.resource.types import Model, ModelFamily
+from viam.services.vision import CaptureAllResult, Vision
 from viam.utils import ValueTypes
-from viam.logging import getLogger
+
 from src.identifier import Identifier
 from src.utils import decode_image
-from viam.services.vision import CaptureAllResult
+
+EXCEPTION_REQUIRED_CAMERA = Exception(
+    "A camera name is required for face_identification vision service module."
+)
 
 EXTRACTORS = ["mediapipe:0", "mediapipe:1", "yunet"]
 
@@ -24,6 +28,8 @@ LOGGER = getLogger(__name__)
 
 
 class FaceIdentificationModule(Vision, Reconfigurable):
+    """FaceIdentificationModule is a subclass a Viam Vision Service"""
+
     MODEL: ClassVar[Model] = Model(ModelFamily("viam", "vision"), "face-identification")
 
     def __init__(self, name: str):
@@ -33,6 +39,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     def new_service(
         cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ) -> Self:
+        """returns new vision service"""
         service = cls(config.name)
         service.reconfigure(config, dependencies)
         return service
@@ -40,27 +47,32 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     # Validates JSON Configuration
     @classmethod
     def validate_config(cls, config: ServiceConfig) -> Sequence[str]:
+        """Validate config and returns a list of dependencies."""
         detection_framework = (
             config.attributes.fields["extractor_model"].string_value or "yunet"
         )
         if detection_framework not in EXTRACTORS:
-            raise Exception(
+            raise ValueError(
                 "face_extractor_model must be one of: '"
                 + "', '".join(EXTRACTORS)
                 + "'."
+                + "Got:"
+                + detection_framework
             )
         model_name = (
             config.attributes.fields["face_embedding_model"].string_value or "facenet"
         )
         if model_name not in ENCODERS:
-            raise Exception(
+            raise ValueError(
                 "face embedding model (encoder) must be one of: '"
                 + "', '".join(ENCODERS)
                 + "'."
+                + "Got:"
+                + model_name
             )
         camera_name = config.attributes.fields["camera_name"].string_value
         if camera_name == "":
-            raise Exception(
+            raise ValueError(
                 "A camera name is required for face_identification vision service module."
             )
         return [camera_name]
@@ -77,23 +89,25 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
             if default is None:
                 if of_type is None:
-                    raise Exception(
+                    raise ValueError(
                         "If default value is None, of_type argument can't be empty"
                     )
                 type_default = of_type
             else:
                 type_default = type(default)
 
-            if type_default == bool:
+            if type_default is bool:
                 return config.attributes.fields[attribute_name].bool_value
-            elif type_default == int:
+            if type_default is int:
                 return int(config.attributes.fields[attribute_name].number_value)
-            elif type_default == float:
+            if type_default is float:
                 return config.attributes.fields[attribute_name].number_value
-            elif type_default == str:
+            if type_default is str:
                 return config.attributes.fields[attribute_name].string_value
-            elif type_default == dict:
+            if type_default is dict:
                 return dict(config.attributes.fields[attribute_name].struct_value)
+
+            raise ValueError("can't parse attribute from config.")
 
         detector_backend = get_attribute_from_config("extractor_model", "yunet")
         extraction_threshold = get_attribute_from_config(
@@ -126,7 +140,6 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             sigmoid_steepness=sigmoid_steepness,
             debug=False,
         )
-
         self.identifier.compute_known_embeddings()
         LOGGER.info(f" Found {len(self.identifier.known_embeddings)} labelled groups.")
 
@@ -189,11 +202,19 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         image: ViamImage,
         count: int,
         *,
-        extra: Mapping[str, Any],
+        extra: Optional[Mapping[str, Any]] = None,
+        timeout: Optional[float] = None,
     ) -> List[Classification]:
         return NotImplementedError
 
-    async def get_classifications_from_camera(self) -> List[Classification]:
+    async def get_classifications_from_camera(
+        self,
+        camera_name: str,
+        count: int,
+        *,
+        extra: Optional[Mapping[str, Any]] = None,
+        timeout: Optional[float] = None,
+    ) -> List[Classification]:
         return NotImplementedError
 
     async def get_detections_from_camera(
@@ -211,9 +232,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         **kwargs,
     ):
         if command["command"] == "recompute_embeddings":
-            self.identifier.known_embeddings = dict()
+            self.identifier.known_embeddings = {}
             self.identifier.compute_known_embeddings()
             LOGGER.info("Embeddings recomputed!")
             return {"result": "Embeddings recomputed!"}
-        else:
-            raise NotImplementedError
+        raise NotImplementedError
