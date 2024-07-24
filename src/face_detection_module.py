@@ -24,6 +24,8 @@ EXTRACTORS = ["mediapipe:0", "mediapipe:1", "yunet"]
 
 ENCODERS = ["sface", "facenet"]
 
+DISTANCES = ["cosine", "euclidean", "manhattan"]
+
 LOGGER = getLogger(__name__)
 
 
@@ -69,6 +71,22 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 + "'."
                 + "Got:"
                 + model_name
+            )
+
+        distance = config.attributes.fields["distance_metric"].string_value or "cosine"
+        if distance not in DISTANCES:
+            if distance == "euclidean_l2":
+                LOGGER.error(
+                    "Names of distance metrics has been updated in release 0.6.1t to %s",
+                    DISTANCES,
+                )
+
+            raise ValueError(
+                "distance_metric attribute must be one of: '"
+                + "', '".join(DISTANCES)
+                + "'."
+                + "Got:"
+                + distance
             )
         camera_name = config.attributes.fields["camera_name"].string_value
         if camera_name == "":

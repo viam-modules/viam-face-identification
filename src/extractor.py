@@ -9,7 +9,7 @@ from numpy import random as rd
 from torchvision.utils import save_image
 from viam.logging import getLogger
 
-from src.distance import euclidean_l2_distance
+from src.distance import distance_norm_l2
 from src.models.yunet import YuNet
 
 LOGGER = getLogger(__name__)
@@ -166,9 +166,9 @@ class Extractor:
         # -----------------------
         # find length of triangle edges
 
-        a = euclidean_l2_distance(np.array(left_eye), np.array(point_3rd))
-        b = euclidean_l2_distance(np.array(right_eye), np.array(point_3rd))
-        c = euclidean_l2_distance(np.array(right_eye), np.array(left_eye))
+        a = distance_norm_l2(np.array(left_eye), np.array(point_3rd))
+        b = distance_norm_l2(np.array(right_eye), np.array(point_3rd))
+        c = distance_norm_l2(np.array(right_eye), np.array(left_eye))
 
         # -----------------------
 

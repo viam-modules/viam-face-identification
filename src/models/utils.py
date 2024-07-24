@@ -24,14 +24,14 @@ def find_threshold(distance_metric):
     Raises:
         ValueError: If the distance metric is not one of 'euclidean', 'euclidean_l2', or 'cosine'.
     """
-    if distance_metric == "euclidean":
+    if distance_metric == "manhattan":
         return 1.1
-    if distance_metric == "euclidean_l2":
+    if distance_metric == "euclidean":
         return 1.1
     if distance_metric == "cosine":
         return 0.4
     raise ValueError(
-        f"Distance metric must be one of: 'euclidean', 'euclidean_l2', 'cosine' but got {distance_metric} instead."  # pylint: disable=line-too-long
+        f"Distance metric must be one of: ['manhattan', 'euclidean', 'cosine'] but got {distance_metric} instead."  # pylint: disable=line-too-long
     )
 
 

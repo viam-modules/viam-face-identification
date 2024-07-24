@@ -3,9 +3,9 @@ import torch.nn.functional as F
 from torch.nn import CosineSimilarity
 
 
-def euclidean_distance(t1, t2):
+def distance_norm_l1(t1, t2):
     """
-    Computes the Euclidean distance between two tensors using the L1 norm.
+    Computes the L1 norm distance between two tensors.
 
     Args:
         t1 (torch.Tensor): The first tensor.
@@ -17,9 +17,9 @@ def euclidean_distance(t1, t2):
     return F.pairwise_distance(t1, t2, p=1).item()  # pylint: disable=not-callable
 
 
-def euclidean_l2_distance(t1, t2):
+def distance_norm_l2(t1, t2):
     """
-    Computes the Euclidean distance between two tensors or numpy arrays using the L2 norm.
+    Computes the Euclidean distance between two tensors or numpy array.
 
     Args:
         t1 (torch.Tensor or numpy.ndarray): The first tensor or numpy array.

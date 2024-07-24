@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from viam.logging import getLogger
 
-from src.distance import cosine_distance, euclidean_distance, euclidean_l2_distance
+from src.distance import cosine_distance, distance_norm_l1, distance_norm_l2
 from src.encoder import Encoder
 from src.extractor import Extractor
 from src.models import utils
@@ -78,10 +78,10 @@ class Identifier:
 
         if distance_metric_name == "cosine":
             self.distance = cosine_distance
-        if distance_metric_name == "euclidean":
-            self.distance = euclidean_distance
-        elif distance_metric_name == "euclidean_l2":
-            self.distance = euclidean_l2_distance
+        if distance_metric_name == "manhattan":
+            self.distance = distance_norm_l1
+        elif distance_metric_name == "euclidean":
+            self.distance = distance_norm_l2
 
         if identification_threshold is None:
             self.identification_threshold = utils.find_threshold(
