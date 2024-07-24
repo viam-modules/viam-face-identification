@@ -50,44 +50,45 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     @classmethod
     def validate_config(cls, config: ServiceConfig) -> Sequence[str]:
         """Validate config and returns a list of dependencies."""
-        detection_framework = (
-            config.attributes.fields["extractor_model"].string_value or "yunet"
-        )
-        if detection_framework not in EXTRACTORS:
-            raise ValueError(
-                "face_extractor_model must be one of: '"
-                + "', '".join(EXTRACTORS)
-                + "'."
-                + "Got:"
-                + detection_framework
-            )
-        model_name = (
-            config.attributes.fields["face_embedding_model"].string_value or "facenet"
-        )
-        if model_name not in ENCODERS:
-            raise ValueError(
-                "face embedding model (encoder) must be one of: '"
-                + "', '".join(ENCODERS)
-                + "'."
-                + "Got:"
-                + model_name
-            )
-
-        distance = config.attributes.fields["distance_metric"].string_value or "cosine"
-        if distance not in DISTANCES:
-            if distance == "euclidean_l2":
-                LOGGER.error(
-                    "Names of distance metrics has been updated in release 0.6.1t to %s",
-                    DISTANCES,
+        if "extractor_model" in config.attributes.fields:
+            detection_framework = config.attributes.fields[
+                "extractor_model"
+            ].string_value
+            if detection_framework not in EXTRACTORS:
+                raise ValueError(
+                    "face_extractor_model must be one of: '"
+                    + "', '".join(EXTRACTORS)
+                    + "'."
+                    + "Got:"
+                    + detection_framework
                 )
+        if "face_embedding_model" in config.attributes.fields:
+            model_name = config.attributes.fields["face_embedding_model"].string_value
+            if model_name not in ENCODERS:
+                raise ValueError(
+                    "face embedding model (encoder) must be one of: '"
+                    + "', '".join(ENCODERS)
+                    + "'."
+                    + "Got:"
+                    + model_name
+                )
+        if "distance_metric" in config.attributes.fields:
+            distance = config.attributes.fields["distance_metric"].string_value
+            if not distance:
+                if distance not in DISTANCES:
+                    if distance == "euclidean_l2":
+                        LOGGER.error(
+                            "Names of distance metrics has been updated in release 0.6.1t to %s",
+                            DISTANCES,
+                        )
 
-            raise ValueError(
-                "distance_metric attribute must be one of: '"
-                + "', '".join(DISTANCES)
-                + "'."
-                + "Got:"
-                + distance
-            )
+                    raise ValueError(
+                        "distance_metric attribute must be one of: '"
+                        + "', '".join(DISTANCES)
+                        + "'."
+                        + "Got:"
+                        + distance
+                    )
         camera_name = config.attributes.fields["camera_name"].string_value
         if camera_name == "":
             raise ValueError(

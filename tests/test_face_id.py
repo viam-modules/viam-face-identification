@@ -56,8 +56,8 @@ def get_vision_service(config_dict: Dict):
 
 class TestFaceReId:
     def test_config(self):
-        with pytest.raises(Exception):
-            service = get_vision_service(config={})
+        with pytest.raises(ValueError):
+            service = get_vision_service(config_dict={})
 
     def test_wrong_encoder_config(self):
         cfg = WORKING_CONFIG_DICT.copy()
