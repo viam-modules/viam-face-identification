@@ -1,3 +1,8 @@
+"""
+This module provides an Encoder class
+to compute a representation/embedding of a face.
+"""
+
 import numpy.random as rd
 from torchvision.utils import save_image
 

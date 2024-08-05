@@ -1,4 +1,11 @@
 # pylint: disable=consider-using-dict-items
+
+"""
+This module provides an Identifier class
+that has an extractor and an encoder to compute and compare
+face embeddings.
+"""
+
 import math
 import os
 
@@ -124,9 +131,11 @@ class Identifier:
                         embed = self.encoder.encode(face, is_ir)
                         embeddings.append(embed)
                 else:
-                    LOGGER.warn(  # pylint: disable=deprecated-method
-                        f"Ignoring unsupported file type: {file}. Only .jpg, .jpeg, and .png files are supported."  # pylint: disable=line-too-long
+                    LOGGER.warning(
+                        "Ignoring unsupported file type: %s. Only .jpg, .jpeg, and .png files are supported.",  # pylint: disable=line-too-long
+                        file,
                     )
+
             self.known_embeddings[directory] = embeddings
 
     def get_detections(self, img):

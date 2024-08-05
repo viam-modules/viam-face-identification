@@ -1,3 +1,8 @@
+"""
+This module provides functions to compute distances
+between two face embeddings.
+"""
+
 import numpy as np
 import torch.nn.functional as F
 from torch.nn import CosineSimilarity

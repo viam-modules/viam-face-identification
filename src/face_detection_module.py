@@ -1,3 +1,8 @@
+"""
+This module provides a Viam Vision Service module
+to perform face Re-Id.
+"""
+
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
 from typing_extensions import Self
 
@@ -36,6 +41,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
     def __init__(self, name: str):
         super().__init__(name=name)
+        self.camera = None
+        self.camera_name = None
+        self.identifier = None
 
     @classmethod
     def new_service(
@@ -160,7 +168,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             debug=False,
         )
         self.identifier.compute_known_embeddings()
-        LOGGER.info(f" Found {len(self.identifier.known_embeddings)} labelled groups.")
+        LOGGER.info("Found %s labelled groups.", len(self.identifier.known_embeddings))
 
     async def get_properties(
         self,

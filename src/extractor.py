@@ -1,3 +1,8 @@
+"""
+This module provides an Extractor class
+to extract/detect faces from a picture.
+"""
+
 import math
 import os
 import sys

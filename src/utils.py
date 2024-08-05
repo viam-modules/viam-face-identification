@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 from io import BytesIO
 from typing import Union
 
@@ -27,8 +28,11 @@ def decode_image(image: Union[Image.Image, ViamImage]) -> np.ndarray:
     if isinstance(image, ViamImage):
         if image.mime_type not in SUPPORTED_IMAGE_TYPE:
             LOGGER.error(
-                f"Unsupported image type: {image.mime_type}. Supported types are {SUPPORTED_IMAGE_TYPE}."  # pylint: disable=line-too-long
+                "Unsupported image type: %s. Supported types are %s.",
+                image.mime_type,
+                SUPPORTED_IMAGE_TYPE,
             )
+
             raise ValueError(f"Unsupported image type: {image.mime_type}.")
 
         im = Image.open(BytesIO(image.data), formats=LIBRARY_SUPPORTED_FORMATS).convert(

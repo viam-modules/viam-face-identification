@@ -1,4 +1,4 @@
-# pylint: disable=possibly-used-before-assignment
+# pylint: disable=possibly-used-before-assignment,missing-module-docstring
 import os
 import sys
 
@@ -47,7 +47,7 @@ def resource_path(relative_path):
     """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS  # pylint: disable=duplicate-code,protected-access
+        base_path = sys._MEIPASS  # pylint: disable=duplicate-code,protected-access,no-member
 
     except Exception:  # pylint: disable=broad-exception-caught
         base_path = os.path.abspath(os.path.join("src", "models"))
