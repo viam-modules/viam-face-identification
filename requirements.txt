@@ -1,9 +1,24 @@
 viam-sdk>=0.21
 onnx2torch
+
 numpy
-torch
+
+torch; sys_platform == 'darwin'
+torch==2.2.2+cpu; sys_platform  == 'linux'
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+
+torchvision == 0.18; sys_platform  == 'darwin'
+torchvision==0.17.2+cpu;sys_platform  == 'linux'
+-f https://download.pytorch.org/whl/cpu/torch_stable.html
+
 pyinstaller
-torchvision
+
 facenet-pytorch
 opencv-python
 pillow
+
+
+##for testing
+pytest
+pytest-asyncio
+pylint

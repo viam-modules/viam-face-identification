@@ -1,3 +1,4 @@
+# pylint: disable=missing-module-docstring
 import asyncio
 
 from viam.services.vision import Vision

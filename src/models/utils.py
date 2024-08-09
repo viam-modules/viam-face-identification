@@ -1,44 +1,81 @@
+# pylint: disable=possibly-used-before-assignment,missing-module-docstring
+import os
+import sys
+
 import torch
 import torchvision.transforms.functional as F
 from facenet_pytorch import InceptionResnetV1
-from .pdt import PDT
-import os
-from torch import Tensor
 from onnx2torch import convert
-import sys
+from torch import Tensor
+
+from .pdt import PDT
 
 
 def find_threshold(distance_metric):
+    """
+    Returns the threshold value based on the specified distance metric.
+
+    Args:
+        distance_metric (str): The distance metric to use. Can be 'euclidean', 'euclidean_l2', or 'cosine'. # pylint: disable=line-too-long
+
+    Returns:
+        float: The threshold value corresponding to the distance metric.
+
+    Raises:
+        ValueError: If the distance metric is not one of 'euclidean', 'euclidean_l2', or 'cosine'.
+    """
+    if distance_metric == "manhattan":
+        return 1.1
     if distance_metric == "euclidean":
         return 1.1
-    if distance_metric == "euclidean_l2":
-        return 1.1
-    elif distance_metric == "cosine":
+    if distance_metric == "cosine":
         return 0.4
-    else:
-        raise ValueError(
-            f"Distance metric must be one of: 'euclidean', 'euclidean_l2', 'cosine' but got {distance_metric} instead"
-        )
+    raise ValueError(
+        f"Distance metric must be one of: ['manhattan', 'euclidean', 'cosine'] but got {distance_metric} instead."  # pylint: disable=line-too-long
+    )
 
 
 def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller"""
+    """
+    Get the absolute path to a resource file, considering different environments.
+
+    Args:
+        relative_path (str): The relative path to the resource file.
+
+    Returns:
+        str: The absolute path to the resource file.
+    """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
+        base_path = sys._MEIPASS  # pylint: disable=duplicate-code,protected-access,no-member
+
+    except Exception:  # pylint: disable=broad-exception-caught
+        base_path = os.path.abspath(os.path.join("src", "models"))
 
     return os.path.join(base_path, relative_path)
 
 
 def get_all(model_name):
+    """
+    Retrieves necessary components (transform, translator, face_recognizer) based on the given model name. # pylint: disable=line-too-long
+
+    Args:
+        model_name (str): The name of the model. Can be 'sface' or 'facenet'.
+
+    Returns:
+        tuple: A tuple containing:
+            - transform (function): A function to transform images for the specified model.
+            - translator (PDT): An instance of PDT (Pose Discrimination Transformer) for the model.
+            - face_recognizer (torch.nn.Module): The face recognition model pretrained on the specified architecture. # pylint: disable=line-too-long
+
+    Notes:
+        This function assumes that the necessary checkpoints and configurations are stored in specific directories. # pylint: disable=line-too-long
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if model_name == "sface":
         mean = [0.0, 0.0, 0.0]
         std = [0.5, 0.5, 0.5]
 
-        # path_to_encoder_checkpoint = os.path.join(os.getcwd(), 'src', 'models', 'checkpoints', 'face_recognition_sface_2021dec.onnx')
         relative_path = os.path.join(
             "checkpoints", "face_recognition_sface_2021dec.onnx"
         )
@@ -63,7 +100,7 @@ def get_all(model_name):
         if not isinstance(img, Tensor):
             img = F.to_tensor(img)
         img = F.normalize(img, mean=mean, std=std)
-        img = F.resize(img, (112, 112), antialias=True)  ##just added must be cleaned
+        img = F.resize(img, (112, 112), antialias=True)
         return img.unsqueeze(0)
 
     relative_path = resource_path(path_to_translator_checkpoint)

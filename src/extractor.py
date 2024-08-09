@@ -1,16 +1,21 @@
+"""
+This module provides an Extractor class
+to extract/detect faces from a picture.
+"""
+
+import math
+import os
+import sys
+
+import cv2 as cv
+import numpy as np
+import torchvision.transforms.functional as F
+from numpy import random as rd
+from torchvision.utils import save_image
 from viam.logging import getLogger
 
-# from mediapipe.python.solutions.face_detection import FaceDetection
-from src.distance import euclidean_l2_distance
-import numpy as np
-import math
-import torchvision.transforms.functional as F
-from torchvision.utils import save_image
-from numpy import random as rd
-import os
+from src.distance import distance_norm_l2
 from src.models.yunet import YuNet
-import cv2 as cv
-import sys
 
 LOGGER = getLogger(__name__)
 backend_target_pairs = [
@@ -27,6 +32,23 @@ target_id = backend_target_pairs[0][1]
 
 
 class Extractor:
+    """
+    Initializes the Extractor with the specified parameters.
+
+    Args:
+        target_size (tuple): The target size of the extracted face images.
+        extraction_threshold (float): The confidence threshold for face extraction.
+        extracting_model (str): The name of the face extraction model to be used.
+        margin (float, optional): Margin added around detected faces for extraction. Defaults to 0.1. # pylint: disable=line-too-long
+        grayscale (bool, optional): If True, convert images to grayscale before processing. Defaults to False.
+        enforce_detection (bool, optional): If True, enforce face detection. Defaults to False.
+        align (bool, optional): If True, align faces based on eye coordinates. Defaults to True.
+        debug (bool, optional): If True, save intermediate images for debugging purposes. Defaults to False.
+
+    Raises:
+        ValueError: If an unknown extracting model is specified.
+    """
+
     def __init__(
         self,
         target_size: (int, int),  # type: ignore
@@ -46,15 +68,13 @@ class Extractor:
         self.align = align
         self.margin = margin
 
-        # if extracting_model.startswith("mediapipe:"):
-        #     self.detector = FaceDetection(min_detection_confidence=.2, model_selection=int(extracting_model[-1]))
         def resource_path(relative_path):
             """Get absolute path to resource, works for dev and for PyInstaller"""
             try:
                 # PyInstaller creates a temp folder and stores path in _MEIPASS
-                base_path = sys._MEIPASS
-            except Exception:
-                base_path = os.path.abspath(".")
+                base_path = sys._MEIPASS  # pylint: disable=E1101,W0212
+            except Exception:  # pylint: disable=broad-exception-caught
+                base_path = os.path.abspath(os.path.join("src", "models"))
 
             return os.path.join(base_path, relative_path)
 
@@ -73,11 +93,21 @@ class Extractor:
                 targetId=target_id,
             )
         else:
-            raise Exception(f"unknown extracting model: {extracting_model}")
+            raise ValueError(f"unknown extracting model: {extracting_model}")
 
         self.debug = debug
 
-    def extract_faces(self, img, is_ir):
+    def extract_faces(self, img):
+        """
+        Extracts and aligns faces from the input image.
+
+        Args:
+            img (numpy.ndarray): The input image from which faces are to be extracted.
+            is_ir (bool): Flag indicating if the input image is infrared.
+
+        Returns:
+            list: A list of tuples containing the extracted face image, the region object, and a confidence score. # pylint: disable=line-too-long
+        """
         face_objs = []
         img_h, img_w = img.shape[0], img.shape[1]
 
@@ -113,7 +143,17 @@ class Extractor:
         return face_objs
 
     def align_face(self, face, left_eye, right_eye):
-        # this function aligns given face in img based on left and right eye coordinates
+        """
+        Aligns the given face image based on the coordinates of the left and right eyes.
+
+        Args:
+            face (numpy.ndarray): The face image to be aligned.
+            left_eye (tuple): The (x, y) coordinates of the left eye.
+            right_eye (tuple): The (x, y) coordinates of the right eye.
+
+        Returns:
+            torch.Tensor: The aligned face image as a tensor.
+        """
 
         left_eye_x, left_eye_y = left_eye
         right_eye_x, right_eye_y = right_eye
@@ -131,9 +171,9 @@ class Extractor:
         # -----------------------
         # find length of triangle edges
 
-        a = euclidean_l2_distance(np.array(left_eye), np.array(point_3rd))
-        b = euclidean_l2_distance(np.array(right_eye), np.array(point_3rd))
-        c = euclidean_l2_distance(np.array(right_eye), np.array(left_eye))
+        a = distance_norm_l2(np.array(left_eye), np.array(point_3rd))
+        b = distance_norm_l2(np.array(right_eye), np.array(point_3rd))
+        c = distance_norm_l2(np.array(right_eye), np.array(left_eye))
 
         # -----------------------
 

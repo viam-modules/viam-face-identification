@@ -1,18 +1,51 @@
-from src.extractor import Extractor
-from src.encoder import Encoder
-from src.utils import dist_to_conf_sigmoid, check_ir
-import os
-from PIL import Image
-import numpy as np
+# pylint: disable=consider-using-dict-items
+
+"""
+This module provides an Identifier class
+that has an extractor and an encoder to compute and compare
+face embeddings.
+"""
+
 import math
+import os
+
+import numpy as np
+from PIL import Image
 from viam.logging import getLogger
+
+from src.distance import cosine_distance, distance_norm_l1, distance_norm_l2
+from src.encoder import Encoder
+from src.extractor import Extractor
 from src.models import utils
-from src.distance import euclidean_distance, cosine_distance, euclidean_l2_distance
+from src.utils import check_ir, dist_to_conf_sigmoid
 
 LOGGER = getLogger(__name__)
 
 
 class Identifier:
+    """
+    A class to identify known faces by computing and comparing embeddings to known embeddings.
+
+    Attributes:
+        model_name (str): The name of the face recognition model.
+        extractor (Extractor): The extractor object for extracting faces from images.
+        encoder (Encoder): The encoder object for computing face embeddings.
+        picture_directory (str): The directory containing images of known faces.
+        known_embeddings (dict): A dictionary of known face embeddings.
+        distance (callable): The distance metric function for comparing embeddings.
+        identification_threshold (float): The threshold for identifying a face as known.
+        sigmoid_steepness (float): The steepness of the sigmoid function for confidence calculation.
+        debug (bool): If True, enables debug mode.
+
+    Methods:
+        compute_known_embeddings():
+            Computes embeddings for known faces from the picture directory.
+        get_detections(img):
+            Computes face detections and identifications in the input image.
+        compare_face_to_known_faces(face, is_ir, unknown_label="unknown"):
+            Encodes the face, calculates its distances with known faces, and returns the best match and the confidence. # pylint: disable=line-too-long
+    """
+
     def __init__(
         self,
         detector_backend: str,
@@ -48,14 +81,14 @@ class Identifier:
 
         self.picture_directory = picture_directory
         self.model_name = model_name
-        self.known_embeddings = dict()
+        self.known_embeddings = {}
 
         if distance_metric_name == "cosine":
             self.distance = cosine_distance
-        if distance_metric_name == "euclidean":
-            self.distance = euclidean_distance
-        elif distance_metric_name == "euclidean_l2":
-            self.distance = euclidean_l2_distance
+        if distance_metric_name == "manhattan":
+            self.distance = distance_norm_l1
+        elif distance_metric_name == "euclidean":
+            self.distance = distance_norm_l2
 
         if identification_threshold is None:
             self.identification_threshold = utils.find_threshold(
@@ -68,14 +101,17 @@ class Identifier:
         self.debug = True
 
     def compute_known_embeddings(self):
+        """
+        Computes embeddings for known faces from the picture directory.
+        """
         all_entries = os.listdir(self.picture_directory)
         directories = [
             entry
             for entry in all_entries
             if os.path.isdir(os.path.join(self.picture_directory, entry))
         ]
-        for dir in directories:
-            label_path = os.path.join(self.picture_directory, dir)
+        for directory in directories:
+            label_path = os.path.join(self.picture_directory, directory)
             embeddings = []
             for file in os.listdir(label_path):
                 if (
@@ -90,30 +126,33 @@ class Identifier:
                     r = img[:, :, 0]
                     g = img[:, :, 1]
                     is_ir = (r == g).all()
-                    faces = self.extractor.extract_faces(img, is_ir)
+                    faces = self.extractor.extract_faces(img)
                     for face, _, _ in faces:
                         embed = self.encoder.encode(face, is_ir)
                         embeddings.append(embed)
                 else:
-                    LOGGER.warn(
-                        f"Ignoring unsupported file type: {file}. Only .jpg, .jpeg, and .png files are supported."
+                    LOGGER.warning(
+                        "Ignoring unsupported file type: %s. Only .jpg, .jpeg, and .png files are supported.",  # pylint: disable=line-too-long
+                        file,
                     )
-            self.known_embeddings[dir] = embeddings
+
+            self.known_embeddings[directory] = embeddings
 
     def get_detections(self, img):
         """
-        compute face detections and identifications in the input
-        image. Faces whose minimum distance at best embedding are
-        greater than the threshold are labelled as 'unknown'.
+        Computes face detections and identifications in the input image.
+
+        Faces whose minimum distance to known embeddings
+        is greater than the threshold are labelled as 'unknown'.
         Args:
-            img (np.array): RGB format
+            img (numpy.ndarray): The input image in RGB format.
 
         Returns:
-            [Detections]: _description_
+            list: A list of dictionaries containing detection results.
         """
         detections = []
         is_ir = check_ir(img)
-        faces = self.extractor.extract_faces(img, is_ir)
+        faces = self.extractor.extract_faces(img)
         for face, face_region, _ in faces:
             match, conf = self.compare_face_to_known_faces(face, is_ir)
             detection = {

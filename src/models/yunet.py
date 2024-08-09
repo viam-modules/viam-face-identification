@@ -4,14 +4,24 @@
 # Copyright (C) 2021, Shenzhen Institute of Artificial Intelligence and Robotics for Society, all rights reserved.
 # Third party copyrights are property of their respective owners.
 
-
+# pylint: skip-file
 import numpy as np
 import cv2 as cv
 
+
 class YuNet:
-    def __init__(self, modelPath, inputSize=[320, 320], confThreshold=0.6, nmsThreshold=0.3, topK=5000, backendId=0, targetId=0):
+    def __init__(
+        self,
+        modelPath,
+        inputSize=[320, 320],
+        confThreshold=0.6,
+        nmsThreshold=0.3,
+        topK=5000,
+        backendId=0,
+        targetId=0,
+    ):
         self._modelPath = modelPath
-        self._inputSize = tuple(inputSize) # [w, h]
+        self._inputSize = tuple(inputSize)  # [w, h]
         self._confThreshold = confThreshold
         self._nmsThreshold = nmsThreshold
         self._topK = topK
@@ -26,7 +36,8 @@ class YuNet:
             nms_threshold=self._nmsThreshold,
             top_k=self._topK,
             backend_id=self._backendId,
-            target_id=self._targetId)
+            target_id=self._targetId,
+        )
 
     @property
     def name(self):
@@ -43,7 +54,8 @@ class YuNet:
             nms_threshold=self._nmsThreshold,
             top_k=self._topK,
             backend_id=self._backendId,
-            target_id=self._targetId)
+            target_id=self._targetId,
+        )
 
     def setInputSize(self, input_size):
         self._model.setInputSize(tuple(input_size))

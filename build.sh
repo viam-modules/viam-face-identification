@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# setup.sh -- environment bootstrapper for python virtualenv
+#!/bin/bash
 
 set -e
 
@@ -30,5 +29,5 @@ python3 -m venv $VIRTUAL_ENV
 echo installing dependencies from requirements.txt
 $VIRTUAL_ENV/bin/pip install -r requirements.txt
 source .venv/bin/activate 
-python3 -m PyInstaller --onefile --hidden-import="googleapiclient" src/main.py
+$PYTHON -m PyInstaller --onefile --hidden-import="googleapiclient" --add-data "./src/models/checkpoints:checkpoints"  src/main.py
 tar -czvf dist/archive.tar.gz dist/main
