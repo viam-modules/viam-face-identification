@@ -8,3 +8,6 @@ src/models
 venv
 benchm
 tests/__pycache__
+build/
+dist/
+main.spec
