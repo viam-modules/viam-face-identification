@@ -7,6 +7,8 @@ from google.protobuf.struct_pb2 import Struct
 from viam.proto.app.robot import ServiceConfig
 import os
 import pytest
+import base64
+import shutil
 
 CAMERA_NAME = "fake-camera"
 
@@ -21,6 +23,7 @@ PASSING_PROPERTIES = Vision.Properties(
 
 SINGLE_PERSON_PICTURE = 1
 PERSONS = ["zidane", "chirac"]
+PERSON_TO_ADD = "cotillard"
 MIN_CONFIDENCE_PASSING = 0.8
 
 WORKING_CONFIG_DICT = {
@@ -44,9 +47,9 @@ def get_config(config_dict: Dict):
     return config
 
 
-def get_vision_service(config_dict: Dict):
+def get_vision_service(config_dict: Dict, people: List):
     service = FaceIdentificationModule("test")
-    cam = FakeCamera(CAMERA_NAME, persons=PERSONS)
+    cam = FakeCamera(CAMERA_NAME, persons=people)
     camera_name = cam.get_resource_name(CAMERA_NAME)
     cfg = get_config(config_dict)
     service.validate_config(cfg)
@@ -57,13 +60,13 @@ def get_vision_service(config_dict: Dict):
 class TestFaceReId:
     def test_config(self):
         with pytest.raises(ValueError):
-            service = get_vision_service(config_dict={})
+            service = get_vision_service(config_dict={}, people=PERSONS)
 
     def test_wrong_encoder_config(self):
         cfg = WORKING_CONFIG_DICT.copy()
         cfg["extractor_model"] = "not-a-real-model-name"
         with pytest.raises(ValueError):
-            _ = get_vision_service(cfg)
+            _ = get_vision_service(cfg, people=PERSONS)
 
     @pytest.mark.asyncio
     async def test_get_properties(self):
@@ -73,7 +76,7 @@ class TestFaceReId:
 
     @pytest.mark.asyncio
     async def test_get_detections_from_camera(self):
-        service = get_vision_service(WORKING_CONFIG_DICT)
+        service = get_vision_service(WORKING_CONFIG_DICT, people=PERSONS)
         for person in PERSONS:
             get_detections_from_camera_result = (
                 await service.get_detections_from_camera(
@@ -86,7 +89,7 @@ class TestFaceReId:
 
     @pytest.mark.asyncio
     async def test_capture_all_from_camera(self):
-        service = get_vision_service(WORKING_CONFIG_DICT)
+        service = get_vision_service(WORKING_CONFIG_DICT, people=PERSONS)
         for person in PERSONS:
             capture_all_result = await service.capture_all_from_camera(
                 "test",
@@ -99,6 +102,34 @@ class TestFaceReId:
                 capture_all_result.detections, person, MIN_CONFIDENCE_PASSING
             )
 
+    @pytest.mark.asyncio
+    async def test_add_embedding(self):
+        service = get_vision_service(WORKING_CONFIG_DICT, people=[PERSON_TO_ADD])
+        # should fail
+        get_detections_from_camera_result = (
+            await service.get_detections_from_camera(
+                CAMERA_NAME, extra={}, timeout=0
+            )
+        )
+        check_detections_output_fail(
+            get_detections_from_camera_result, PERSON_TO_ADD, MIN_CONFIDENCE_PASSING
+        )
+
+        # re-init so camera is reset
+        service = get_vision_service(WORKING_CONFIG_DICT, people=[PERSON_TO_ADD])
+        with open(os.path.join("./tests", "img", PERSON_TO_ADD + ".jpg"), "rb") as image_file:
+            b64 = base64.b64encode(image_file.read())
+        await service.do_command({"command": "write_embedding", "image_ext": "jpg", "embedding_name": "cotillard", "image_base64": b64})
+        await service.do_command({"command": "recompute_embeddings"})
+        get_detections_from_camera_result = (
+            await service.get_detections_from_camera(
+                CAMERA_NAME, extra={}, timeout=0
+            )
+        )
+        check_detections_output(
+            get_detections_from_camera_result, PERSON_TO_ADD, MIN_CONFIDENCE_PASSING
+        )
+        shutil.rmtree(os.path.join("./tests", "img", PERSON_TO_ADD))
 
 def check_detections_output(
     detections: List[Detection], target_class: str, target_confidence: float
@@ -106,3 +137,9 @@ def check_detections_output(
     assert len(detections) == SINGLE_PERSON_PICTURE
     assert detections[0]["class_name"] == target_class
     assert detections[0]["confidence"] > MIN_CONFIDENCE_PASSING
+
+def check_detections_output_fail(
+    detections: List[Detection], target_class: str, target_confidence: float
+):
+    assert len(detections) == SINGLE_PERSON_PICTURE
+    assert detections[0]["class_name"] != target_class

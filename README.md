@@ -93,9 +93,32 @@ The following attributes are available to configure your deepface module:
 | `picture_directory`           | string | Optional     |             | Path to the dataset used for face recognition.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `distance_metric`             | string | Optional     | `'cosine'`  | Distance metric used for face recognition. This attribute can be set to `'cosine'`, `'manhattan'` ( = norm L1, or Manhattan distance) and `'euclidean'`. Default and recommanded is `'cosine'`.                                                                                                                                                                                                                                                                                                      |
 | `identification_threshold`    | float  | Optional     |             | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
-| `sigmoid_steepness`           | float  | Optional     | `10`        | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.                                                                                                                                                                                                                                                                                                                                                              |
+| `sigmoid_steepness`           | float  | Optional     | `10`        | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.
 
+## Sensor API
 
+The event-manager resource implements the [rdk vision service API](https://docs.viam.com/services/vision/#api).
+
+### do_command()
+
+Examples:
+
+```python
+await em.do_command({"command": "recompute_embeddings"}) # recompute embeddings from picture_directory
+await em.do_command({"command": "write_embedding", "image_ext": "jpg", "embedding_name": "cotillard", "image_base64": b64}) # Write a new image grouped with embedding name "cotillard", from a base64 jpg image
+```
+
+#### recompute_embeddings
+
+Recompute embeddings from picture_directory
+
+#### write_embedding
+
+Write a new image embedding based on base64 encoded image passed in as *image_base64*.
+*embedding_name* must be included, and will dictate if it is grouped with an existing embedding of this name or a new embedding.
+*image_ext* is required, and is the extension of the image passed in.
+
+Note that new embedding images will be written with an auto-generated UUID-based filename.
 
 ## IR input support
 To support IR inputs and cross-domain face recognition, we reproduced [Prepended Domain Transformer: Heterogeneous Face Recognition without Bells and Whistle (*Marcel et al.*)](https://arxiv.org/abs/2210.06529). 
