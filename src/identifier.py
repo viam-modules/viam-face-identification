@@ -111,7 +111,7 @@ class Identifier:
         file_path = f"{self.picture_directory}/{embedding_name}"
         file_path = sanitize_filepath(file_path)
         if not os.path.exists(file_path):
-            Path.mkdir(file_path, exist_ok=True)
+            Path(file_path).mkdir(exist_ok=True)
         file_name = f"{uuid.uuid4()}.{ext}"
         sanitized = sanitize_filepath(f"{file_path}/{file_name}")
         with open(sanitized, "wb") as f:
