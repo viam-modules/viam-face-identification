@@ -1,5 +1,5 @@
 import os
-from typing import Any, Coroutine, List, Tuple
+from typing import Any, Coroutine, List, Tuple, Union
 
 from PIL import Image
 from viam.components.camera import Camera
@@ -29,11 +29,11 @@ class FakeCamera(Camera):
 
     async def get_images(
         self,
-    ) -> Coroutine[Any, Any, Tuple[List[NamedImage] | ResponseMetadata]]:
+    ) -> Coroutine[Any, Any, Tuple[Union[List[NamedImage], ResponseMetadata]]]:
         raise NotImplementedError
 
     async def get_properties(self) -> Coroutine[Any, Any, GetPropertiesResponse]:
         raise NotImplementedError
 
-    async def get_point_cloud(self) -> Coroutine[Any, Any, Tuple[bytes | str]]:
+    async def get_point_cloud(self) -> Coroutine[Any, Any, Tuple[Union[bytes, str]]]:
         raise NotImplementedError
