@@ -169,7 +169,7 @@ https://doi.org/10.48550/arXiv.2210.06529)
 
 ## PyInstaller build instructions
 
-IMPORT NOTE: DEVELOPMENT SHOULD BE ON PYTHON3.9!
+IMPORT NOTE: DEVELOPMENT SHOULD BE ON PYTHON3.11 or lower!
 
 Run this to create your virtual environment:
 ```
