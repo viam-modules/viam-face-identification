@@ -95,7 +95,7 @@ The following attributes are available to configure your deepface module:
 | `identification_threshold`    | float  | Optional     |             | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
 | `sigmoid_steepness`           | float  | Optional     | `10`        | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.
 
-## Sensor API
+## Vision Service API
 
 The event-manager resource implements the [rdk vision service API](https://docs.viam.com/services/vision/#api).
 
