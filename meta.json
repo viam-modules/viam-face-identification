@@ -9,6 +9,7 @@
       "model": "viam:vision:face-identification"
     }
   ],
+  "darwin_deps": ["go", "pkg-config", "nlopt-static", "x264", "jpeg-turbo", "ffmpeg"],
   "build": {
     "build": "./build.sh",
     "path": "dist/archive.tar.gz",
