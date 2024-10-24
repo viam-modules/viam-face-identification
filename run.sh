@@ -3,6 +3,7 @@ cd `dirname $0`
 
 if [ -f .installed ]
   then
+    uv venv --python 3.11
     source .venv/bin/activate
   else
     apt-get install python3-pip
@@ -22,5 +23,5 @@ fi
 
 # Be sure to use `exec` so that termination signals reach the python process,
 # or handle forwarding termination signals manually
-exec python3 -m main $@
+exec uv run python -m main $@
 
