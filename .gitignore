@@ -3,6 +3,13 @@
 .venv/
 src/__pycache__
 src/data
+src/models/__pycache__
 .vscode
 venv
 benchm
+tests/__pycache__
+build/
+dist/
+main.spec
+__pycache__
+.installed

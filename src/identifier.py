@@ -8,7 +8,11 @@ face embeddings.
 
 import math
 import os
+import uuid
+from pathlib import Path
+from io import BytesIO
 
+from pathvalidate import sanitize_filepath
 import numpy as np
 from PIL import Image
 from viam.logging import getLogger
@@ -99,6 +103,20 @@ class Identifier:
 
         self.sigmoid_steepness = sigmoid_steepness
         self.debug = True
+
+    def write_embedding(self, image:BytesIO, ext:str, embedding_name:str):
+        """
+        Writes a new embedding file into the picture directory.
+        """
+        file_path = f"{self.picture_directory}/{embedding_name}"
+        file_path = sanitize_filepath(file_path)
+        if not os.path.exists(file_path):
+            Path(file_path).mkdir(exist_ok=True)
+        file_name = f"{uuid.uuid4()}.{ext}"
+        sanitized = sanitize_filepath(f"{file_path}/{file_name}")
+        with open(sanitized, "wb") as f:
+            f.write(image.getvalue())
+            LOGGER.info("Wrote %s as embedding", sanitized)
 
     def compute_known_embeddings(self):
         """

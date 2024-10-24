@@ -4,6 +4,9 @@ to perform face Re-Id.
 """
 
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
+from io import BytesIO
+import base64
+
 from typing_extensions import Self
 
 from viam.components.camera import Camera
@@ -263,4 +266,10 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             self.identifier.compute_known_embeddings()
             LOGGER.info("Embeddings recomputed!")
             return {"result": "Embeddings recomputed!"}
+        if command["command"] == "write_embedding":
+            if command["image_base64"] and command["image_ext"] and command["embedding_name"]:
+                self.identifier.write_embedding(BytesIO(base64.b64decode(command['image_base64'])),
+                                                command["image_ext"], command["embedding_name"])
+                self.identifier.compute_known_embeddings()
+                return {"result": "Embedding added and embeddings recomputed!"}
         raise NotImplementedError

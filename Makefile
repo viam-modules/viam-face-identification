@@ -5,4 +5,4 @@ test:
 	python3 -m pytest tests/*
 
 lint:
-	python3 -m pylint src --disable=W0719,R0902,R0913,R0914,R0903
+	python3 -m pylint src --disable=W0719,R0902,R0913,R0914,R0903,R0917

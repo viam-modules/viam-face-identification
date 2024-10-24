@@ -16,7 +16,7 @@ pyinstaller
 facenet-pytorch
 opencv-python
 pillow
-
+pathvalidate
 
 ##for testing
 pytest
