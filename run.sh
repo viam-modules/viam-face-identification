@@ -6,10 +6,14 @@ if [ -f .installed ]
     source .venv/bin/activate
   else
     apt-get install python3-pip
-    python3 -m pip install --user virtualenv --break-system-packages
-    python3 -m venv .venv
+    if ! command -v uv 2>&1 >/dev/null; then
+      pip install uv
+    fi
+    
+    # the version of pytorch we are using requires 3.11 or lower
+    uv venv --python 3.11
     source .venv/bin/activate
-    pip3 install --upgrade -r requirements.txt
+    uv pip install -r requirements.txt
     if [ $? -eq 0 ]
       then
         touch .installed
