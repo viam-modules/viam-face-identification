@@ -1,7 +1,7 @@
 {
   "module_id": "viam:face-identification",
   "visibility": "public",
-  "url": "https://github.com/viam-labs/viam-face-identification",
+  "url": "https://github.com/viam-modules/viam-face-identification",
   "description": "This vision service provides face identification.",
   "models": [
     {
