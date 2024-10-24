@@ -9,10 +9,10 @@
       "model": "viam:vision:face-identification"
     }
   ],
-  "darwin_deps": ["go", "pkg-config"],
   "build": {
     "build": "./build.sh",
     "path": "dist/archive.tar.gz",
+    "darwin_deps": ["go", "pkg-config"],
     "arch": [
       "linux/amd64",
       "linux/arm64",
