@@ -13,8 +13,8 @@ if ! command -v uv 2>&1 >/dev/null; then
 fi
 
 source .env
-# the version of pytorch we are using requires 3.11 or lower
-uv venv --python 3.11
+# the version of pytorch we are using requires 3.10 or lower
+uv venv --python 3.10
 source .venv/bin/activate
 uv pip install -r requirements.txt
 $PYTHON -m PyInstaller --onefile --hidden-import="googleapiclient" --add-data "./src/models/checkpoints:checkpoints"  main.py
