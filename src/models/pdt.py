@@ -228,29 +228,24 @@ class PDT(
         self.dec = Conv2d(self.pool_features * 4, 3, kernel_size=1, bias=self.use_bias)
 
     def forward(self, x):
-        first = self.branch1x1(x)
-        branch1x1 = self.relu(first)
-        # branch1x1 = self.relu(self.branch1x1(x))
-
-        branch5x5 = self.relu(self.branch5x5_1(x))
-        branch5x5 = self.relu(self.branch5x5_2(branch5x5))
-
-        branch3x3dbl = self.relu(self.branch3x3dbl_1(x))
-        branch3x3dbl = self.relu(self.branch3x3dbl_2(branch3x3dbl))
-        branch3x3dbl = self.relu(self.branch3x3dbl_3(branch3x3dbl))
-
-        branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
-        branch_pool = self.relu(self.branch_pool(branch_pool))
-
-        outputs = [branch1x1, branch5x5, branch3x3dbl, branch_pool]
-
-        concat = torch.cat(outputs, 1)
-
-        if self.use_se:
-            concat = self.se(concat)
-        if self.use_cbam:
-            concat = self.cbam(concat)
-
-        img = self.dec(concat)
-
+        try:
+            first = self.branch1x1(x)
+            branch1x1 = self.relu(first)
+            # branch1x1 = self.relu(self.branch1x1(x))
+            branch5x5 = self.relu(self.branch5x5_1(x))
+            branch5x5 = self.relu(self.branch5x5_2(branch5x5))
+            branch3x3dbl = self.relu(self.branch3x3dbl_1(x))
+            branch3x3dbl = self.relu(self.branch3x3dbl_2(branch3x3dbl))
+            branch3x3dbl = self.relu(self.branch3x3dbl_3(branch3x3dbl))
+            branch_pool = F.avg_pool2d(x, kernel_size=3, stride=1, padding=1)
+            branch_pool = self.relu(self.branch_pool(branch_pool))
+            outputs = [branch1x1, branch5x5, branch3x3dbl, branch_pool]
+            concat = torch.cat(outputs, 1)
+            if self.use_se:
+                concat = self.se(concat)
+            if self.use_cbam:
+                concat = self.cbam(concat)
+            img = self.dec(concat)
+        except Exception as e:
+            raise Exception(f"PDT encountered an error in inference: {str(e)}") from e
         return img
