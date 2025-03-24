@@ -6,7 +6,9 @@
   "models": [
     {
       "api": "rdk:service:vision",
-      "model": "viam:vision:face-identification"
+      "model": "viam:vision:face-identification",
+      "short_description": "Vision service to detect known faces",
+      "markdown_link": "README.md#example"
     }
   ],
   "build": {
