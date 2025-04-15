@@ -196,6 +196,13 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
     ):
+        if camera_name not in (self.camera_name, ""):
+            raise ValueError(
+                "Camera name passed to method:",
+                camera_name,
+                "is not the configured 'camera_name'",
+                self.camera_name,
+            )
         viam_im = await self.camera.get_image(mime_type=CameraMimeType.JPEG)
         detections = None
         if return_detections:
@@ -250,6 +257,13 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     async def get_detections_from_camera(
         self, camera_name: str, *, extra: Mapping[str, Any], timeout: float
     ) -> List[Detection]:
+        if camera_name not in (self.camera_name, ""):
+            raise ValueError(
+                "Camera name passed to method:",
+                camera_name,
+                "is not the configured 'camera_name'",
+                self.camera_name,
+            )
         im = await self.camera.get_image(mime_type=CameraMimeType.JPEG)
         img = decode_image(im)
         return self.identifier.get_detections(img)

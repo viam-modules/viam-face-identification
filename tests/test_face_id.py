@@ -92,7 +92,7 @@ class TestFaceReId:
         service = get_vision_service(WORKING_CONFIG_DICT, people=PERSONS)
         for person in PERSONS:
             capture_all_result = await service.capture_all_from_camera(
-                "test",
+                CAMERA_NAME,
                 return_image=True,
                 return_classifications=True,
                 return_detections=True,
@@ -130,6 +130,31 @@ class TestFaceReId:
             get_detections_from_camera_result, PERSON_TO_ADD, MIN_CONFIDENCE_PASSING
         )
         shutil.rmtree(os.path.join("./tests", "img", PERSON_TO_ADD))
+
+    async def test_default_camera_behavior(self):
+        service = get_vision_service(WORKING_CONFIG_DICT, people=PERSONS)
+        
+        result = await service.get_detections_from_camera(
+            "", extra={}, timeout=0
+        )
+        assert result is not None
+
+        result = await service.capture_all_from_camera(
+            "", return_classifications=True
+        )
+        assert result is not None
+        assert result.classifications is not None
+
+        with pytest.raises(ValueError) as excinfo:
+            await service.get_detections_from_camera(
+                "", extra={}, timeout=0
+            )
+        assert CAMERA_NAME in str(excinfo.value)
+        with pytest.raises(ValueError) as excinfo:
+            await service.capture_all_from_camera(
+                "", return_classifications=True
+            )
+        assert CAMERA_NAME in str(excinfo.value)
 
 def check_detections_output(
     detections: List[Detection], target_class: str, target_confidence: float
