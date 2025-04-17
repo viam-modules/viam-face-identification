@@ -14,7 +14,7 @@ async def main():
     registry before the module adds the resource model.
     """
     Registry.register_resource_creator(
-        Vision.SUBTYPE,
+        Vision.API,
         FaceIdentificationModule.MODEL,
         ResourceCreatorRegistration(
             FaceIdentificationModule.new_service,
@@ -23,7 +23,7 @@ async def main():
     )
     module = Module.from_args()
 
-    module.add_model_from_registry(Vision.SUBTYPE, FaceIdentificationModule.MODEL)
+    module.add_model_from_registry(Vision.API, FaceIdentificationModule.MODEL)
     await module.start()
 
 

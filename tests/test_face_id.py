@@ -163,6 +163,14 @@ def check_detections_output(
     assert len(detections) == SINGLE_PERSON_PICTURE
     assert detections[0]["class_name"] == target_class
     assert detections[0]["confidence"] > MIN_CONFIDENCE_PASSING
+    assert detections[0]["x_min"] is not None
+    assert detections[0]["y_min"] is not None
+    assert detections[0]["x_max"] is not None
+    assert detections[0]["y_max"] is not None
+    assert 0.0 < detections[0]["x_min_normalized"] < 1.0
+    assert 0.0 < detections[0]["y_min_normalized"] < 1.0
+    assert 0.0 < detections[0]["x_max_normalized"] < 1.0
+    assert 0.0 < detections[0]["y_max_normalized"] < 1.0 
 
 def check_detections_output_fail(
     detections: List[Detection], target_class: str, target_confidence: float
