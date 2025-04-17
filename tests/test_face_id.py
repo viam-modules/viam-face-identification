@@ -131,6 +131,7 @@ class TestFaceReId:
         )
         shutil.rmtree(os.path.join("./tests", "img", PERSON_TO_ADD))
 
+    @pytest.mark.asyncio
     async def test_default_camera_behavior(self):
         service = get_vision_service(WORKING_CONFIG_DICT, people=PERSONS)
         
@@ -140,19 +141,19 @@ class TestFaceReId:
         assert result is not None
 
         result = await service.capture_all_from_camera(
-            "", return_classifications=True
+            "", return_detections=True
         )
         assert result is not None
-        assert result.classifications is not None
+        assert result.detections is not None
 
         with pytest.raises(ValueError) as excinfo:
             await service.get_detections_from_camera(
-                "", extra={}, timeout=0
+                "not-cam", extra={}, timeout=0
             )
         assert CAMERA_NAME in str(excinfo.value)
         with pytest.raises(ValueError) as excinfo:
             await service.capture_all_from_camera(
-                "", return_classifications=True
+                "not-cam", return_detections=True
             )
         assert CAMERA_NAME in str(excinfo.value)
 
