@@ -182,6 +182,16 @@ class Identifier:
                 "y_max": face_region["y"] + face_region["h"],
             }
 
+            if img.shape[0] != 0 and img.shape[1] != 0:
+                detection.update(
+                    {
+                        "x_min_normalized": face_region["x"] / img.shape[1],
+                        "y_min_normalized": face_region["y"] / img.shape[0],
+                        "x_max_normalized": (face_region["x"] + face_region["w"]) / img.shape[1],
+                        "y_max_normalized": (face_region["y"] + face_region["h"]) / img.shape[0],
+                    }
+                )
+
             detections.append(detection)
 
         return detections
