@@ -3,8 +3,10 @@ This module provides an Encoder class
 to compute a representation/embedding of a face.
 """
 
+import numpy as np
 import numpy.random as rd
 from torchvision.utils import save_image
+import torch
 
 from src.models import utils
 
@@ -35,6 +37,7 @@ class Encoder:
         self.align = (align,)
         self.normalization = normalization
         self.debug = debug
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def encode(self, face, is_ir):
         """
@@ -47,12 +50,18 @@ class Encoder:
         Returns:
             numpy.ndarray: The computed embedding of the face image.
         """
-        img = self.transform(face)
+        try:
+            img = self.transform(face)
+        except Exception as e:
+            raise Exception(f"encountered error in encoder transform: {str(e)}") from e
         if self.debug:
             _id = rd.randint(0, 10000)
             save_image(img, f"./transformed_{_id}.png")
         if is_ir:
-            three_channeled_image = self.translator(img)
+            try:
+                three_channeled_image = self.translator(img)
+            except Exception as e:
+                raise Exception(f"encountered error in encoder translator: {str(e)}") from e
             if self.debug:
                 save_image(three_channeled_image, f"./three_channel_{_id}.png")
         else:
@@ -61,5 +70,14 @@ class Encoder:
                 save_image(
                     three_channeled_image, f"./three_channel_no_translate{_id}.png"
                 )
-        embed = self.face_recognizer(three_channeled_image)
+        try:
+            if isinstance(three_channeled_image, np.ndarray):
+                face_tensor = torch.from_numpy(three_channeled_image).to(self.device)
+            elif isinstance(three_channeled_image, torch.Tensor):
+                face_tensor = three_channeled_image.to(self.device)
+            else:
+                raise TypeError("Input to face recognition encoder must be numpy array or torch tensor")
+            embed = self.face_recognizer(face_tensor)
+        except Exception as e:
+            raise Exception(f"encountered error in encoder face recognizer: {str(e)}") from e
         return embed[0]

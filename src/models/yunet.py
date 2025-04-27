@@ -62,5 +62,8 @@ class YuNet:
 
     def infer(self, image):
         # Forward
-        faces = self._model.detect(image)
+        try:
+            faces = self._model.detect(image)
+        except Exception as e:
+            raise Exception(f"yunet face detector encountered an error in inference: {str(e)}") from e
         return np.array([]) if faces[1] is None else faces[1]
