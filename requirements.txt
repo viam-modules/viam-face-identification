@@ -4,11 +4,11 @@ onnx2torch
 numpy==1.26.4
 
 torch; sys_platform == 'darwin'
-torch==2.2.2; sys_platform  == 'linux'
+torch==2.6.0; sys_platform  == 'linux'
 -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
 torchvision == 0.21; sys_platform  == 'darwin'
-torchvision==0.17.2;sys_platform  == 'linux'
+torchvision==0.21.0;sys_platform  == 'linux'
 -f https://download.pytorch.org/whl/cpu/torch_stable.html
 
 pyinstaller
