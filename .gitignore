@@ -13,3 +13,4 @@ dist/
 main.spec
 __pycache__
 .installed
+.canon.yaml
