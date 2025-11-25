@@ -3,7 +3,7 @@ This module provides a Viam Vision Service module
 to perform face Re-Id.
 """
 
-from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence
+from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Tuple
 from io import BytesIO
 import base64
 
@@ -11,7 +11,7 @@ from typing_extensions import Self
 
 from viam.components.camera import Camera
 from viam.logging import getLogger
-from viam.media.video import CameraMimeType, ViamImage
+from viam.media.video import ViamImage
 from viam.module.types import Reconfigurable
 from viam.proto.app.robot import ServiceConfig
 from viam.proto.common import PointCloudObject, ResourceName
@@ -59,7 +59,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
 
     # Validates JSON Configuration
     @classmethod
-    def validate_config(cls, config: ServiceConfig) -> Sequence[str]:
+    def validate_config(cls, config: ServiceConfig) -> Tuple[Sequence[str], Sequence[str]]:
         """Validate config and returns a list of dependencies."""
         if "extractor_model" in config.attributes.fields:
             detection_framework = config.attributes.fields[
@@ -105,7 +105,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             raise ValueError(
                 "A camera name is required for face_identification vision service module."
             )
-        return [camera_name]
+        return [camera_name], []
 
     def reconfigure(
         self, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
@@ -203,10 +203,13 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 "is not the configured 'camera_name'",
                 self.camera_name,
             )
-        viam_im = await self.camera.get_image(mime_type=CameraMimeType.JPEG)
+        viam_imgs = await self.camera.get_images()
+        if len(viam_imgs) == 0:
+            raise ValueError("No images returned by get_images")
+        viam_im = viam_imgs[0]
         detections = None
         if return_detections:
-            img = decode_image(viam_im)
+            img = decode_image(viam_imgs[0])
             detections = self.identifier.get_detections(img)
 
         if not return_image:
@@ -264,8 +267,10 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 "is not the configured 'camera_name'",
                 self.camera_name,
             )
-        im = await self.camera.get_image(mime_type=CameraMimeType.JPEG)
-        img = decode_image(im)
+        imgs = await self.camera.get_images()
+        if len(imgs) == 0:
+            raise ValueError("No images returned by get_images")
+        img = decode_image(imgs[0])
         return self.identifier.get_detections(img)
 
     async def do_command(
