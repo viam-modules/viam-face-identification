@@ -203,8 +203,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 "is not the configured 'camera_name'",
                 self.camera_name,
             )
-        viam_imgs = await self.camera.get_images()
-        if len(viam_imgs) == 0:
+        viam_imgs, _ = await self.camera.get_images()
+        if viam_imgs is None or len(viam_imgs) == 0:
             raise ValueError("No images returned by get_images")
         viam_im = viam_imgs[0]
         detections = None
@@ -267,8 +267,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 "is not the configured 'camera_name'",
                 self.camera_name,
             )
-        imgs = await self.camera.get_images()
-        if len(imgs) == 0:
+        imgs, _ = await self.camera.get_images()
+        if imgs is None or len(imgs) == 0:
             raise ValueError("No images returned by get_images")
         img = decode_image(imgs[0])
         return self.identifier.get_detections(img)

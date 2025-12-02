@@ -35,7 +35,7 @@ class FakeCamera(Camera):
         print(f"len(images){len(self.images)}")
         if self.count > len(self.images):
             return IndexError("Already read all the images passed as input")
-        return [pil.pil_to_viam_image(self.images[self.count], CameraMimeType.JPEG)]
+        return [pil.pil_to_viam_image(self.images[self.count], CameraMimeType.JPEG)], None
 
     async def get_properties(self) -> Coroutine[Any, Any, GetPropertiesResponse]:
         raise NotImplementedError
