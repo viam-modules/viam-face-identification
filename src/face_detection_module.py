@@ -285,7 +285,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs,
     ):
-        if command.get("command") == "recompute_embeddings":
+        if "recompute_embeddings" in command:
             self.identifier.known_embeddings = {}
             self.identifier.compute_known_embeddings()
             LOGGER.info("Embeddings recomputed!")
