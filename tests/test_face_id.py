@@ -9,6 +9,7 @@ import os
 import pytest
 import base64
 import shutil
+from PIL import Image
 
 CAMERA_NAME = "fake-camera"
 
@@ -156,6 +157,53 @@ class TestFaceReId:
                 "not-cam", return_detections=True
             )
         assert CAMERA_NAME in str(excinfo.value)
+
+    @pytest.mark.asyncio
+    async def test_add_person_unknown_face(self):
+        """When face is unknown, add_person should save a cropped face image."""
+        # Use cotillard (not in known embeddings) — camera will show cotillard's face
+        service = get_vision_service(WORKING_CONFIG_DICT, people=[PERSON_TO_ADD])
+        person_name = PERSON_TO_ADD
+        save_dir = os.path.join("tests", "img", person_name)
+
+        # Ensure clean state — remove directory if it exists
+        if os.path.exists(save_dir):
+            shutil.rmtree(save_dir)
+
+        try:
+            result = await service.do_command({"add_person": person_name})
+            assert "result" in result
+            assert person_name in result["result"]
+            # Verify a file was saved
+            assert os.path.exists(save_dir)
+            saved_files = os.listdir(save_dir)
+            assert len(saved_files) == 1
+            assert saved_files[0].endswith(".jpeg")
+            # Verify the saved image is a crop (smaller than original 720p-ish test image)
+            saved_img = Image.open(os.path.join(save_dir, saved_files[0]))
+            original_img = Image.open(os.path.join("tests", "img", PERSON_TO_ADD + ".jpg"))
+            assert saved_img.size[0] < original_img.size[0] or saved_img.size[1] < original_img.size[1]
+        finally:
+            if os.path.exists(save_dir):
+                shutil.rmtree(save_dir)
+
+    @pytest.mark.asyncio
+    async def test_add_person_already_recognized(self):
+        """When face is already recognized as the target person, return success-like no-op."""
+        # Use zidane who IS in known embeddings — camera shows zidane's face
+        service = get_vision_service(WORKING_CONFIG_DICT, people=["zidane"])
+        result = await service.do_command({"add_person": "zidane"})
+        assert "result" in result
+        assert "already recognized" in result["result"]
+
+    @pytest.mark.asyncio
+    async def test_add_person_wrong_person(self):
+        """When face is identified as a different known person, return error."""
+        # Camera shows chirac's face, but we're trying to add "zidane"
+        service = get_vision_service(WORKING_CONFIG_DICT, people=["chirac"])
+        with pytest.raises(ValueError) as excinfo:
+            await service.do_command({"add_person": "zidane"})
+        assert "chirac" in str(excinfo.value)
 
 def check_detections_output(
     detections: List[Detection], target_class: str, target_confidence: float

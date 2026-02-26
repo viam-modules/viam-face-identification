@@ -6,6 +6,11 @@ to perform face Re-Id.
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Tuple
 from io import BytesIO
 import base64
+import os
+
+import numpy as np
+
+from PIL import Image as PILImage
 
 from typing_extensions import Self
 
@@ -280,15 +285,61 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs,
     ):
-        if command["command"] == "recompute_embeddings":
+        if command.get("command") == "recompute_embeddings":
             self.identifier.known_embeddings = {}
             self.identifier.compute_known_embeddings()
             LOGGER.info("Embeddings recomputed!")
             return {"result": "Embeddings recomputed!"}
-        if command["command"] == "write_embedding":
+        if command.get("command") == "write_embedding":
             if command["image_base64"] and command["image_ext"] and command["embedding_name"]:
                 self.identifier.write_embedding(BytesIO(base64.b64decode(command['image_base64'])),
                                                 command["image_ext"], command["embedding_name"])
                 self.identifier.compute_known_embeddings()
                 return {"result": "Embedding added and embeddings recomputed!"}
+        if "add_person" in command:
+            person_name = command["add_person"]
+            imgs, _ = await self.camera.get_images()
+            if imgs is None or len(imgs) == 0:
+                raise ValueError("No images returned by get_images")
+            # Decode to PIL for cropping/saving and numpy for detection
+            img = PILImage.open(BytesIO(imgs[0].data)).convert("RGB")
+            np_img = np.array(img)
+            # Run face identification
+            detections = self.identifier.get_detections(np_img)
+            if len(detections) == 0:
+                raise ValueError("No face detected in the image")
+            if len(detections) > 1:
+                raise ValueError(
+                    "Multiple faces detected. Ensure only one person is in frame."
+                )
+            detection = detections[0]
+            class_name = detection["class_name"]
+            if class_name == person_name:
+                return {
+                    "result": f"{person_name} is already recognized, no image needed"
+                }
+            if class_name != "unknown":
+                raise ValueError(
+                    f"Face identified as {class_name}, not {person_name}. "
+                    "Ensure the correct person is in frame."
+                )
+            # Crop to face bounding box
+            cropped = img.crop((
+                detection["x_min"],
+                detection["y_min"],
+                detection["x_max"],
+                detection["y_max"],
+            ))
+            # Save cropped face
+            save_dir = os.path.join(self.identifier.picture_directory, person_name)
+            os.makedirs(save_dir, exist_ok=True)
+            existing = set(os.listdir(save_dir))
+            idx = 1
+            while f"{person_name}_{idx}.jpeg" in existing:
+                idx += 1
+            filename = f"{person_name}_{idx}.jpeg"
+            filepath = os.path.join(save_dir, filename)
+            cropped.save(filepath, "JPEG")
+            LOGGER.info("Saved cropped face image to %s", filepath)
+            return {"result": f"Added image for {person_name} at {filepath}"}
         raise NotImplementedError
