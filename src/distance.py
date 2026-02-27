@@ -34,7 +34,7 @@ def distance_norm_l2(t1, t2):
         float: The Euclidean distance between the two inputs.
     """
     if isinstance(t1, np.ndarray) and isinstance(t2, np.ndarray):
-        euc_distance = t2 - t1
+        euc_distance = t2.astype(np.float64) - t1.astype(np.float64)
         euc_distance = np.sum(np.multiply(euc_distance, euc_distance))
         euc_distance = np.sqrt(euc_distance)
         return euc_distance

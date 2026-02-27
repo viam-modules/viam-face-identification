@@ -114,7 +114,12 @@ class Extractor:
         self.detector.setInputSize([img_w, img_h])
         faces = self.detector.infer(img)
         for face in faces:
+            if not np.all(np.isfinite(face[:8])):
+                LOGGER.warning("Skipping face with non-finite detection values")
+                continue
             (x, y, w, h, x_re, y_re, x_le, y_le) = list(map(int, face[:8]))
+            if w <= 0 or h <= 0:
+                continue
 
             h_margin_px = int(h * self.margin)
             w_margin_px = int(w * self.margin)
@@ -123,6 +128,8 @@ class Extractor:
                 max(0, y - h_margin_px) : min(y + h + h_margin_px, img_h),
                 max(0, x - w_margin_px) : min(x + w + w_margin_px, img_w),
             ].copy()
+            if detected_face.shape[0] == 0 or detected_face.shape[1] == 0:
+                continue
             if self.align:
                 detected_face = self.align_face(
                     detected_face, (x_re, y_re), (x_le, y_le)
