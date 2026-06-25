@@ -64,6 +64,7 @@ class Identifier:
         distance_metric_name: str,
         identification_threshold: float,
         sigmoid_steepness: float,
+        max_embeddings_per_label: int = None,
         debug: bool = False,
     ):
         self.model_name = model_name
@@ -87,6 +88,8 @@ class Identifier:
         self.picture_directory = picture_directory
         self.model_name = model_name
         self.known_embeddings = {}
+        # Cap on embeddings kept per label; bounds the nearest-neighbor scan.
+        self.max_embeddings_per_label = max_embeddings_per_label
 
         # Where embeddings are cached, plus a signature of the params that affect
         # them so a model/config change invalidates a stale cache.
@@ -100,6 +103,7 @@ class Identifier:
                 detector_backend,
                 extraction_threshold,
                 grayscale,
+                max_embeddings_per_label,
             )
         )
 
@@ -190,30 +194,49 @@ class Identifier:
         ]
         for directory in directories:
             label_path = os.path.join(self.picture_directory, directory)
-            embeddings = []
+            image_files = []
             for file in os.listdir(label_path):
                 if (
                     (".jpg" in file.lower())
                     or (".jpeg" in file.lower())
                     or (".png" in file.lower())
                 ):
-                    im = Image.open(label_path + "/" + file).convert(
-                        "RGB"
-                    )  # convert in RGB because png are RGBA
-                    img = np.array(im)
-                    r = img[:, :, 0]
-                    g = img[:, :, 1]
-                    is_ir = (r == g).all()
-                    faces = self.extractor.extract_faces(img)
-                    for face, _, _ in faces:
-                        embed = self.encoder.encode(face, is_ir)
-                        embeddings.append(embed)
+                    image_files.append(file)
                 else:
                     LOGGER.warning(
                         "Ignoring unsupported file type: %s. Only .jpg, .jpeg, and .png files are supported.",  # pylint: disable=line-too-long
                         file,
                     )
 
+            # Keep only the most recent images per label so the nearest-neighbor
+            # scan stays bounded as photos accumulate.
+            if self.max_embeddings_per_label:
+                image_files.sort(
+                    key=lambda f, p=label_path: os.path.getmtime(os.path.join(p, f)),
+                    reverse=True,
+                )
+
+            embeddings = []
+            for file in image_files:
+                im = Image.open(os.path.join(label_path, file)).convert(
+                    "RGB"
+                )  # convert in RGB because png are RGBA
+                img = np.array(im)
+                r = img[:, :, 0]
+                g = img[:, :, 1]
+                is_ir = (r == g).all()
+                faces = self.extractor.extract_faces(img)
+                for face, _, _ in faces:
+                    embed = self.encoder.encode(face, is_ir)
+                    embeddings.append(embed)
+                if (
+                    self.max_embeddings_per_label
+                    and len(embeddings) >= self.max_embeddings_per_label
+                ):
+                    break
+
+            if self.max_embeddings_per_label:
+                embeddings = embeddings[: self.max_embeddings_per_label]
             known[directory] = embeddings
 
         self.known_embeddings = known

@@ -160,6 +160,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             "identification_threshold", None, float
         )
         sigmoid_steepness = get_attribute_from_config("sigmoid_steepness", 10.0)
+        max_embeddings_per_label = get_attribute_from_config(
+            "max_embeddings_per_label", None, int
+        )
 
         # Only read cached embeddings here -- computing would blow the reconfigure
         # deadline. A missing cache is built lazily; see _ensure_embeddings.
@@ -175,6 +178,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             distance_metric_name=distance_metric_name,
             identification_threshold=identification_threshold,
             sigmoid_steepness=sigmoid_steepness,
+            max_embeddings_per_label=max_embeddings_per_label,
             debug=False,
         )
         self._building = False
