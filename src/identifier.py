@@ -88,12 +88,9 @@ class Identifier:
         self.model_name = model_name
         self.known_embeddings = {}
 
-        # Precomputed gallery embeddings are persisted here so that startup just
-        # reads them instead of re-encoding every known face on every reconfigure.
+        # Where embeddings are cached, plus a signature of the params that affect
+        # them so a model/config change invalidates a stale cache.
         self.embeddings_path = os.path.join(picture_directory, "embeddings.pkl")
-        # Anything that changes the embeddings themselves. If this differs from
-        # what's stored in the cache file, the cache is stale and is recomputed,
-        # so changing the model in config can't silently serve old embeddings.
         self._embeddings_signature = "|".join(
             str(p)
             for p in (
@@ -138,13 +135,7 @@ class Identifier:
             LOGGER.info("Wrote %s as embedding", sanitized)
 
     def load_known_embeddings(self) -> bool:
-        """
-        Reads precomputed embeddings from disk.
-
-        Returns True if a usable cache was loaded; False if it's missing,
-        unreadable, or was built with a different model config (stale signature),
-        signalling the caller to recompute.
-        """
+        """Load cached embeddings; return False if missing, unreadable, or stale."""
         if not os.path.exists(self.embeddings_path):
             LOGGER.info("No precomputed embeddings at %s", self.embeddings_path)
             return False
@@ -172,10 +163,7 @@ class Identifier:
         return True
 
     def save_known_embeddings(self):
-        """
-        Persists the current embeddings (tagged with the model signature) so a
-        later startup can read them instead of recomputing.
-        """
+        """Persist embeddings (tagged with the model signature) for later reads."""
         payload = {
             "signature": self._embeddings_signature,
             "embeddings": self.known_embeddings,
@@ -192,10 +180,7 @@ class Identifier:
             LOGGER.exception("Failed to save embeddings to %s", self.embeddings_path)
 
     def compute_known_embeddings(self):
-        """
-        Computes embeddings for known faces from the picture directory and
-        persists them to disk via save_known_embeddings().
-        """
+        """Compute embeddings for all known faces and persist them to disk."""
         known = {}
         all_entries = os.listdir(self.picture_directory)
         directories = [

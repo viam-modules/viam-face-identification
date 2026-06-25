@@ -48,11 +48,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         self.camera = None
         self.camera_name = None
         self.identifier = None
-        # _building: a (re)compute is running on a background thread.
-        # _built: embeddings have been loaded or computed at least once, so we
-        # don't keep re-triggering the lazy build for a legitimately empty gallery.
-        self._building = False
-        self._built = False
+        self._building = False  # a build is running on a background thread
+        self._built = False  # embeddings loaded/computed at least once
 
     @classmethod
     def new_service(
@@ -116,6 +113,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     def reconfigure(
         self, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ):
+        """Apply config: resolve the camera and load cached embeddings."""
         self.camera_name = config.attributes.fields["camera_name"].string_value
         self.camera = dependencies[Camera.get_resource_name(self.camera_name)]
 
@@ -163,10 +161,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         )
         sigmoid_steepness = get_attribute_from_config("sigmoid_steepness", 10.0)
 
-        # reconfigure only reads precomputed embeddings -- it never computes them,
-        # so it stays well within Viam's reconfigure deadline. If none exist yet
-        # (e.g. a fresh machine), they are built lazily on the first detection
-        # call; see _ensure_embeddings.
+        # Only read cached embeddings here -- computing would blow the reconfigure
+        # deadline. A missing cache is built lazily; see _ensure_embeddings.
         self.identifier = Identifier(
             detector_backend=detector_backend,
             extraction_threshold=extraction_threshold,
@@ -185,14 +181,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         self._built = self.identifier.load_known_embeddings()
 
     def _ensure_embeddings(self):
-        """
-        Builds the known-face embeddings the first time they are needed if none
-        were precomputed (e.g. a fresh machine with no embeddings file). The
-        build runs once, on a background thread, so detection calls aren't
-        blocked. The detector/encoder aren't thread-safe, so callers skip
-        detection while a build is in progress. Recompute on demand with the
-        'recompute_embeddings' do-command.
-        """
+        """Build embeddings once, in the background, if none were cached."""
         if self._built or self._building:
             return
         self._building = True
@@ -342,9 +331,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         raise NotImplementedError
 
     def _recompute_embeddings(self):
-        """Synchronously recompute and persist embeddings, holding the build
-        flag so a concurrent lazy build can't run the (non-thread-safe) models
-        at the same time."""
+        """Recompute + persist embeddings, guarding against a concurrent build."""
         self._building = True
         try:
             self.identifier.compute_known_embeddings()
