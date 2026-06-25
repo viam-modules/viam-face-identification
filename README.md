@@ -110,7 +110,7 @@ await em.do_command({"command": "write_embedding", "image_ext": "jpg", "embeddin
 
 #### recompute_embeddings
 
-Recompute embeddings from picture_directory
+Recompute embeddings from picture_directory. Embeddings are cached, so run this after adding or removing photos in picture_directory to apply the changes.
 
 #### write_embedding
 
