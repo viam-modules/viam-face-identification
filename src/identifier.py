@@ -8,6 +8,7 @@ face embeddings.
 
 import math
 import os
+import pickle
 import uuid
 from pathlib import Path
 from io import BytesIO
@@ -87,6 +88,24 @@ class Identifier:
         self.model_name = model_name
         self.known_embeddings = {}
 
+        # Precomputed gallery embeddings are persisted here so that startup just
+        # reads them instead of re-encoding every known face on every reconfigure.
+        self.embeddings_path = os.path.join(picture_directory, "embeddings.pkl")
+        # Anything that changes the embeddings themselves. If this differs from
+        # what's stored in the cache file, the cache is stale and is recomputed,
+        # so changing the model in config can't silently serve old embeddings.
+        self._embeddings_signature = "|".join(
+            str(p)
+            for p in (
+                model_name,
+                normalization,
+                align,
+                detector_backend,
+                extraction_threshold,
+                grayscale,
+            )
+        )
+
         if distance_metric_name == "cosine":
             self.distance = cosine_distance
         if distance_metric_name == "manhattan":
@@ -118,10 +137,66 @@ class Identifier:
             f.write(image.getvalue())
             LOGGER.info("Wrote %s as embedding", sanitized)
 
+    def load_known_embeddings(self) -> bool:
+        """
+        Reads precomputed embeddings from disk.
+
+        Returns True if a usable cache was loaded; False if it's missing,
+        unreadable, or was built with a different model config (stale signature),
+        signalling the caller to recompute.
+        """
+        if not os.path.exists(self.embeddings_path):
+            LOGGER.info("No precomputed embeddings at %s", self.embeddings_path)
+            return False
+        try:
+            with open(self.embeddings_path, "rb") as f:
+                payload = pickle.load(f)
+        except Exception:  # pylint: disable=broad-exception-caught
+            LOGGER.exception(
+                "Failed to read precomputed embeddings at %s", self.embeddings_path
+            )
+            return False
+        if payload.get("signature") != self._embeddings_signature:
+            LOGGER.warning(
+                "Precomputed embeddings at %s were built with a different model "
+                "config; recomputing.",
+                self.embeddings_path,
+            )
+            return False
+        self.known_embeddings = payload.get("embeddings", {})
+        LOGGER.info(
+            "Loaded precomputed embeddings from %s: %s labelled group(s).",
+            self.embeddings_path,
+            len(self.known_embeddings),
+        )
+        return True
+
+    def save_known_embeddings(self):
+        """
+        Persists the current embeddings (tagged with the model signature) so a
+        later startup can read them instead of recomputing.
+        """
+        payload = {
+            "signature": self._embeddings_signature,
+            "embeddings": self.known_embeddings,
+        }
+        try:
+            with open(self.embeddings_path, "wb") as f:
+                pickle.dump(payload, f)
+            LOGGER.info(
+                "Saved precomputed embeddings to %s (%s group(s)).",
+                self.embeddings_path,
+                len(self.known_embeddings),
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            LOGGER.exception("Failed to save embeddings to %s", self.embeddings_path)
+
     def compute_known_embeddings(self):
         """
-        Computes embeddings for known faces from the picture directory.
+        Computes embeddings for known faces from the picture directory and
+        persists them to disk via save_known_embeddings().
         """
+        known = {}
         all_entries = os.listdir(self.picture_directory)
         directories = [
             entry
@@ -154,7 +229,10 @@ class Identifier:
                         file,
                     )
 
-            self.known_embeddings[directory] = embeddings
+            known[directory] = embeddings
+
+        self.known_embeddings = known
+        self.save_known_embeddings()
 
     def get_detections(self, img):
         """
