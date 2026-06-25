@@ -6,6 +6,7 @@ to perform face Re-Id.
 from typing import Any, ClassVar, Dict, List, Mapping, Optional, Sequence, Tuple
 from io import BytesIO
 import base64
+import threading
 
 from typing_extensions import Self
 
@@ -47,6 +48,8 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         self.camera = None
         self.camera_name = None
         self.identifier = None
+        self._building = False  # a build is running on a background thread
+        self._built = False  # embeddings loaded/computed at least once
 
     @classmethod
     def new_service(
@@ -110,6 +113,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
     def reconfigure(
         self, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]
     ):
+        """Apply config: resolve the camera and load cached embeddings."""
         self.camera_name = config.attributes.fields["camera_name"].string_value
         self.camera = dependencies[Camera.get_resource_name(self.camera_name)]
 
@@ -156,6 +160,12 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             "identification_threshold", None, float
         )
         sigmoid_steepness = get_attribute_from_config("sigmoid_steepness", 10.0)
+        max_embeddings_per_label = get_attribute_from_config(
+            "max_embeddings_per_label", None, int
+        )
+
+        # Only read cached embeddings here -- computing would blow the reconfigure
+        # deadline. A missing cache is built lazily; see _ensure_embeddings.
         self.identifier = Identifier(
             detector_backend=detector_backend,
             extraction_threshold=extraction_threshold,
@@ -168,10 +178,32 @@ class FaceIdentificationModule(Vision, Reconfigurable):
             distance_metric_name=distance_metric_name,
             identification_threshold=identification_threshold,
             sigmoid_steepness=sigmoid_steepness,
+            max_embeddings_per_label=max_embeddings_per_label,
             debug=False,
         )
-        self.identifier.compute_known_embeddings()
-        LOGGER.info("Found %s labelled groups.", len(self.identifier.known_embeddings))
+        self._building = False
+        self._built = self.identifier.load_known_embeddings()
+
+    def _ensure_embeddings(self):
+        """Build embeddings once, in the background, if none were cached."""
+        if self._built or self._building:
+            return
+        self._building = True
+
+        def _build():
+            try:
+                self.identifier.compute_known_embeddings()
+                self._built = True
+                LOGGER.info(
+                    "Computed embeddings: %s labelled group(s).",
+                    len(self.identifier.known_embeddings),
+                )
+            except Exception:  # pylint: disable=broad-exception-caught
+                LOGGER.exception("Failed to compute embeddings")
+            finally:
+                self._building = False
+
+        threading.Thread(target=_build, name="face-id-build", daemon=True).start()
 
     async def get_properties(
         self,
@@ -209,8 +241,10 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         viam_im = viam_imgs[0]
         detections = None
         if return_detections:
-            img = decode_image(viam_imgs[0])
-            detections = self.identifier.get_detections(img)
+            self._ensure_embeddings()
+            if not self._building:
+                img = decode_image(viam_imgs[0])
+                detections = self.identifier.get_detections(img)
 
         if not return_image:
             viam_im = None
@@ -234,6 +268,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         extra: Mapping[str, Any],
         timeout: float,
     ) -> List[Detection]:
+        self._ensure_embeddings()
+        if self._building:
+            return []
         img = decode_image(image)
         return self.identifier.get_detections(img)
 
@@ -267,6 +304,9 @@ class FaceIdentificationModule(Vision, Reconfigurable):
                 "is not the configured 'camera_name'",
                 self.camera_name,
             )
+        self._ensure_embeddings()
+        if self._building:
+            return []
         imgs, _ = await self.camera.get_images()
         if imgs is None or len(imgs) == 0:
             raise ValueError("No images returned by get_images")
@@ -280,15 +320,25 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         timeout: Optional[float] = None,
         **kwargs,
     ):
+        if self._building:
+            return {"result": "Embedding computation already in progress."}
         if command["command"] == "recompute_embeddings":
-            self.identifier.known_embeddings = {}
-            self.identifier.compute_known_embeddings()
+            self._recompute_embeddings()
             LOGGER.info("Embeddings recomputed!")
             return {"result": "Embeddings recomputed!"}
         if command["command"] == "write_embedding":
             if command["image_base64"] and command["image_ext"] and command["embedding_name"]:
                 self.identifier.write_embedding(BytesIO(base64.b64decode(command['image_base64'])),
                                                 command["image_ext"], command["embedding_name"])
-                self.identifier.compute_known_embeddings()
+                self._recompute_embeddings()
                 return {"result": "Embedding added and embeddings recomputed!"}
         raise NotImplementedError
+
+    def _recompute_embeddings(self):
+        """Recompute + persist embeddings, guarding against a concurrent build."""
+        self._building = True
+        try:
+            self.identifier.compute_known_embeddings()
+        finally:
+            self._building = False
+            self._built = True

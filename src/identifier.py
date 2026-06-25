@@ -8,6 +8,7 @@ face embeddings.
 
 import math
 import os
+import pickle
 import uuid
 from pathlib import Path
 from io import BytesIO
@@ -63,6 +64,7 @@ class Identifier:
         distance_metric_name: str,
         identification_threshold: float,
         sigmoid_steepness: float,
+        max_embeddings_per_label: int = None,
         debug: bool = False,
     ):
         self.model_name = model_name
@@ -86,6 +88,24 @@ class Identifier:
         self.picture_directory = picture_directory
         self.model_name = model_name
         self.known_embeddings = {}
+        # Cap on embeddings kept per label; bounds the nearest-neighbor scan.
+        self.max_embeddings_per_label = max_embeddings_per_label
+
+        # Where embeddings are cached, plus a signature of the params that affect
+        # them so a model/config change invalidates a stale cache.
+        self.embeddings_path = os.path.join(picture_directory, "embeddings.pkl")
+        self._embeddings_signature = "|".join(
+            str(p)
+            for p in (
+                model_name,
+                normalization,
+                align,
+                detector_backend,
+                extraction_threshold,
+                grayscale,
+                max_embeddings_per_label,
+            )
+        )
 
         if distance_metric_name == "cosine":
             self.distance = cosine_distance
@@ -118,10 +138,54 @@ class Identifier:
             f.write(image.getvalue())
             LOGGER.info("Wrote %s as embedding", sanitized)
 
+    def load_known_embeddings(self) -> bool:
+        """Load cached embeddings; return False if missing, unreadable, or stale."""
+        if not os.path.exists(self.embeddings_path):
+            LOGGER.info("No precomputed embeddings at %s", self.embeddings_path)
+            return False
+        try:
+            with open(self.embeddings_path, "rb") as f:
+                payload = pickle.load(f)
+        except Exception:  # pylint: disable=broad-exception-caught
+            LOGGER.exception(
+                "Failed to read precomputed embeddings at %s", self.embeddings_path
+            )
+            return False
+        if payload.get("signature") != self._embeddings_signature:
+            LOGGER.warning(
+                "Precomputed embeddings at %s were built with a different model "
+                "config; recomputing.",
+                self.embeddings_path,
+            )
+            return False
+        self.known_embeddings = payload.get("embeddings", {})
+        LOGGER.info(
+            "Loaded precomputed embeddings from %s: %s labelled group(s).",
+            self.embeddings_path,
+            len(self.known_embeddings),
+        )
+        return True
+
+    def save_known_embeddings(self):
+        """Persist embeddings (tagged with the model signature) for later reads."""
+        payload = {
+            "signature": self._embeddings_signature,
+            "embeddings": self.known_embeddings,
+        }
+        try:
+            with open(self.embeddings_path, "wb") as f:
+                pickle.dump(payload, f)
+            LOGGER.info(
+                "Saved precomputed embeddings to %s (%s group(s)).",
+                self.embeddings_path,
+                len(self.known_embeddings),
+            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            LOGGER.exception("Failed to save embeddings to %s", self.embeddings_path)
+
     def compute_known_embeddings(self):
-        """
-        Computes embeddings for known faces from the picture directory.
-        """
+        """Compute embeddings for all known faces and persist them to disk."""
+        known = {}
         all_entries = os.listdir(self.picture_directory)
         directories = [
             entry
@@ -130,31 +194,53 @@ class Identifier:
         ]
         for directory in directories:
             label_path = os.path.join(self.picture_directory, directory)
-            embeddings = []
+            image_files = []
             for file in os.listdir(label_path):
                 if (
                     (".jpg" in file.lower())
                     or (".jpeg" in file.lower())
                     or (".png" in file.lower())
                 ):
-                    im = Image.open(label_path + "/" + file).convert(
-                        "RGB"
-                    )  # convert in RGB because png are RGBA
-                    img = np.array(im)
-                    r = img[:, :, 0]
-                    g = img[:, :, 1]
-                    is_ir = (r == g).all()
-                    faces = self.extractor.extract_faces(img)
-                    for face, _, _ in faces:
-                        embed = self.encoder.encode(face, is_ir)
-                        embeddings.append(embed)
+                    image_files.append(file)
                 else:
                     LOGGER.warning(
                         "Ignoring unsupported file type: %s. Only .jpg, .jpeg, and .png files are supported.",  # pylint: disable=line-too-long
                         file,
                     )
 
-            self.known_embeddings[directory] = embeddings
+            # Keep only the most recent images per label so the nearest-neighbor
+            # scan stays bounded as photos accumulate.
+            if self.max_embeddings_per_label:
+                image_files.sort(
+                    key=lambda f, p=label_path: os.path.getmtime(os.path.join(p, f)),
+                    reverse=True,
+                )
+
+            embeddings = []
+            for file in image_files:
+                im = Image.open(os.path.join(label_path, file)).convert(
+                    "RGB"
+                )  # convert in RGB because png are RGBA
+                img = np.array(im)
+                r = img[:, :, 0]
+                g = img[:, :, 1]
+                is_ir = (r == g).all()
+                faces = self.extractor.extract_faces(img)
+                for face, _, _ in faces:
+                    embed = self.encoder.encode(face, is_ir)
+                    embeddings.append(embed)
+                if (
+                    self.max_embeddings_per_label
+                    and len(embeddings) >= self.max_embeddings_per_label
+                ):
+                    break
+
+            if self.max_embeddings_per_label:
+                embeddings = embeddings[: self.max_embeddings_per_label]
+            known[directory] = embeddings
+
+        self.known_embeddings = known
+        self.save_known_embeddings()
 
     def get_detections(self, img):
         """

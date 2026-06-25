@@ -94,6 +94,7 @@ The following attributes are available to configure your deepface module:
 | `distance_metric`             | string | Optional     | `'cosine'`  | Distance metric used for face recognition. This attribute can be set to `'cosine'`, `'manhattan'` ( = norm L1, or Manhattan distance) and `'euclidean'`. Default and recommanded is `'cosine'`.                                                                                                                                                                                                                                                                                                      |
 | `identification_threshold`    | float  | Optional     |             | Threshold for identifying faces. Faces with similarity scores below this threshold are considered `'unknown'`. This value should depend on both `face_embedding_model` and `distance_metric`. **WARNING**: If left empty, the module will assign a value from [this table](#thresholds-for-face-recoignition-models-and-similarity-distances) depending on model and metric. If you want the module to return all detections without any threshold, `identification_threshold` should be set to `0`. |
 | `sigmoid_steepness`           | float  | Optional     | `10`        | Steepness of the function mapping confidence to distance. See [here](#distance-to-confidence-function) for plots with different values.
+| `max_embeddings_per_label`    | int    | Optional     |             | Maximum number of embeddings kept per labelled group. When set, only the most recently modified images per group are used, which bounds the nearest-neighbor search as photos accumulate. Unlimited if left unset.
 
 ## Vision Service API
 
@@ -110,7 +111,7 @@ await em.do_command({"command": "write_embedding", "image_ext": "jpg", "embeddin
 
 #### recompute_embeddings
 
-Recompute embeddings from picture_directory
+Recompute embeddings from picture_directory. Embeddings are cached, so run this after adding or removing photos in picture_directory to apply the changes.
 
 #### write_embedding
 

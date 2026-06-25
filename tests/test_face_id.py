@@ -54,6 +54,9 @@ def get_vision_service(config_dict: Dict, people: List):
     cfg = get_config(config_dict)
     service.validate_config(cfg)
     service.reconfigure(cfg, dependencies={camera_name: cam})
+    # reconfigure only reads cached embeddings; build them now (as a real caller
+    # does via the recompute_embeddings do-command) so the service is ready.
+    service._recompute_embeddings()
     return service
 
 
