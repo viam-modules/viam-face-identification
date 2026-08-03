@@ -23,4 +23,4 @@ fi
 source .venv/bin/activate
 uv pip install -r requirements.txt
 $PYTHON -m PyInstaller --onefile --hidden-import="googleapiclient" --add-data "./src/models/checkpoints:checkpoints"  main.py
-tar -czvf dist/archive.tar.gz dist/main meta.json
+tar -czvf dist/archive.tar.gz dist/main meta.json first_run.sh

@@ -21,5 +21,6 @@
       "darwin/arm64"
     ]
   },
-  "entrypoint": "dist/main"
+  "entrypoint": "dist/main",
+  "first_run": "first_run.sh"
 }
