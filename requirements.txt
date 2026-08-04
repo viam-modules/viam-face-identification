@@ -14,7 +14,7 @@ torchvision==0.17.2;sys_platform  == 'linux'
 pyinstaller
 
 facenet-pytorch
-opencv-python
+opencv-python-headless
 pillow>=10.4.0
 pathvalidate
 
