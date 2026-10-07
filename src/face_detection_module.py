@@ -224,6 +224,7 @@ class FaceIdentificationModule(Vision, Reconfigurable):
         return_classifications: bool = False,
         return_detections: bool = False,
         return_object_point_clouds: bool = False,
+        return_detections_3d: bool = False,
         *,
         extra: Optional[Mapping[str, Any]] = None,
         timeout: Optional[float] = None,
