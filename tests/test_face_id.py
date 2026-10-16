@@ -19,6 +19,7 @@ PASSING_PROPERTIES = Vision.Properties(
     classifications_supported=False,
     detections_supported=True,
     object_point_clouds_supported=False,
+    detections_3d_supported=False,
 )
 
 SINGLE_PERSON_PICTURE = 1
